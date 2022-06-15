@@ -1421,16 +1421,16 @@
         },
         {
             "name": "kreait/firebase-php",
-            "version": "6.4.0",
+            "version": "6.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kreait/firebase-php.git",
-                "reference": "8aa5b1229718daa160261debd2db29a07ef192c5"
+                "reference": "c14ed1b1b06feab070be43b585a60efb8b1219af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kreait/firebase-php/zipball/8aa5b1229718daa160261debd2db29a07ef192c5",
-                "reference": "8aa5b1229718daa160261debd2db29a07ef192c5",
+                "url": "https://api.github.com/repos/kreait/firebase-php/zipball/c14ed1b1b06feab070be43b585a60efb8b1219af",
+                "reference": "c14ed1b1b06feab070be43b585a60efb8b1219af",
                 "shasum": ""
             },
             "require": {
@@ -1443,7 +1443,7 @@
                 "google/auth": "^1.21",
                 "google/cloud-core": "^1.44.2",
                 "google/cloud-storage": "^1.26.2",
-                "guzzlehttp/guzzle": "^7.4",
+                "guzzlehttp/guzzle": "^7.4.4",
                 "kreait/firebase-tokens": "^3.0",
                 "lcobucci/jwt": "^4.1",
                 "mtdowling/jmespath.php": "^2.6.1",
@@ -1512,7 +1512,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-06-08T15:49:32+00:00"
+            "time": "2022-06-14T23:12:24+00:00"
         },
         {
             "name": "kreait/firebase-tokens",
@@ -10100,5 +10100,5 @@
         "php": "^8.0.2"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }
