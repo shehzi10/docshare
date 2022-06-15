@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::group(['namespace' => 'App\Http\Controllers\Api'], function () {
+Route::group(['namespace' => 'App\Http\Controllers\Api'], function () { 
 
 
     Route::post('register', 'AuthController@register');
@@ -35,6 +35,15 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::get('logout', 'ProfileController@logout');
     Route::post('updateProfile', 'ProfileController@updateProfile');
     Route::post('searchUser', 'ProfileController@searchUser');
+
+    Route::post('addFriend', 'FriendListController@addFriend');
+
+    //Post Module
+    Route::get('getPosts','PostController@index')->name('getPosts');
+    Route::post('uploadPost','PostController@store')->name('uploadPost');
+    Route::post('openDocument','PostController@openDocument')->name('openDocument');
+    Route::post('deletePost','PostController@destroy')->name('deletePost');
+    Route::get('getAllDocuments','PostController@getAllDocuments')->name('getAllDocuments');
 
     Route::get('getAllFriendsRequests', 'FriendListController@getAllFriendsRequests');
     Route::post('sendRequest', 'FriendListController@sendRequest');
