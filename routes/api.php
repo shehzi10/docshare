@@ -36,5 +36,12 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('updateProfile', 'ProfileController@updateProfile');
     Route::post('searchUser', 'ProfileController@searchUser');
 
-    Route::post('addFriend', 'FriendListController@addFriend');
+    Route::get('getAllFriendsRequests', 'FriendListController@getAllFriendsRequests');
+    Route::post('sendRequest', 'FriendListController@sendRequest');
+    Route::post('acceptFriendRequest', 'FriendListController@acceptFriendRequest');
+    Route::post('rejectFriendRequest', 'FriendListController@rejectFriendRequest');
+    Route::get('unFriendUser/{id}', 'FriendListController@unFriendUser');
+
+    Route::post('toggleNotification', 'SettingsController@toggleNotification');
+    Route::post('changePassword/{id}', 'SettingsController@changePassword');
 });
