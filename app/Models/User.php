@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\HasApiTokens;
 use Laravel\Cashier\Billable;
+use App\Models\Group;
+use App\Models\GroupMessage;
+use App\Models\GroupMember;
 
 
 class User extends Authenticatable
@@ -58,4 +61,19 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function groups()
+	{
+        return $this->hasMany(Group::class);
+	}
+
+    public function groupMessages()
+	{
+        return $this->hasMany(GroupMessage::class);
+	}
+
+    public function groupMembers()
+	{
+        return $this->hasMany(GroupMember::class);
+	}
 }

@@ -42,8 +42,24 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::get('getPosts','PostController@index')->name('getPosts');
     Route::post('uploadPost','PostController@store')->name('uploadPost');
     Route::post('openDocument','PostController@openDocument')->name('openDocument');
+    Route::post('removeTag','PostController@removeTag')->name('removeTag');
     Route::post('deletePost','PostController@destroy')->name('deletePost');
     Route::get('getAllDocuments','PostController@getAllDocuments')->name('getAllDocuments');
+
+
+    //Group Chat Module
+    Route::get('getGroups','GroupController@index')->name('getGroups');
+    Route::post('createGroup','GroupController@store')->name('createGroup');
+    Route::post('updateGroup','GroupController@update')->name('updateGroup');
+    Route::post('groupMembers','GroupController@groupMembers')->name('groupMembers');
+    Route::post('removeMember','GroupController@removeMember')->name('removeMember');
+    
+    
+    //Group Messages Module
+    Route::post('getGroupMessages','GroupMessageController@index')->name('getGroupMessages');
+    Route::post('sendGroupMessage','GroupMessageController@store')->name('sendGroupMessage');
+    Route::post('deleteMessage','GroupMessageController@destroy')->name('deleteMessage');
+
 
     Route::get('getAllFriendsRequests', 'FriendListController@getAllFriendsRequests');
     Route::post('sendRequest', 'FriendListController@sendRequest');

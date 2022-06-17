@@ -6,20 +6,28 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostDocument;
+use App\Models\Taggedfriend;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File; 
+use App\Http\Resources\PostResource;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+
+
 
 class PostController extends Controller
 {
     public function index(){
         $posts = Post::where('user_id', Auth::user()->id)->with(['documents' => function($q){
             $q->orderBy('updated_at','desc');
-        }])->simplePaginate(5);
-        $data['posts'] = $posts;
+        },'taggedFriends'])->simplePaginate(5);
+        $data = PostResource::collection($posts)->response()->getData(true);
+        // $data['posts'] = $posts;
         return apiresponse(true, 'Posts Found', $data);
     }
+
 
     public function getAllDocuments(){
         $documents = PostDocument::where('user_id', Auth::user()->id)->orderBy('updated_at','desc')->simplePaginate(5);
@@ -27,10 +35,12 @@ class PostController extends Controller
         return apiresponse(true, 'Documents Found', $data);
     }
 
+
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
-            'title'     => 'required',
-            'description'  => 'required'
+            'title'         => 'required',
+            'description'   => 'required',
+            'documents'     => 'required',
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
         $post = new Post();
@@ -41,6 +51,10 @@ class PostController extends Controller
             foreach($request->documents as $doc){
                 $document = new PostDocument();
                 $document->type = $doc['type'];
+                if(isset($doc['is_protected']) && $doc['is_protected'] == 1){
+                    $document->is_protected = $doc['is_protected'];
+                    $document->key = Hash::make($doc['key']);
+                }
                 $document->post_id = $post->id;
                 $document->user_id = Auth::user()->id;
                 $filename = time().'.'.$doc['document']->getClientOriginalExtension();
@@ -48,9 +62,18 @@ class PostController extends Controller
                 $document->name = $filename;
                 $document->save();
             }
+            if($request->has('tagFriends')){
+                foreach ($request->tagFriends as $value) {
+                    $Taggedfriend = new Taggedfriend();
+                    $Taggedfriend->post_id = $post->id;
+                    $Taggedfriend->user_id = $value;
+                    $Taggedfriend->save();
+                }
+            }
             return apiresponse(true, 'Post uploaded');
         }
     }
+
 
     public function openDocument(Request $request){
         $validator = Validator::make($request->all(), [
@@ -58,11 +81,25 @@ class PostController extends Controller
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
         $document = PostDocument::findorfail($request->document_id);
-        $document->updated_at = Carbon::now();
-        if($document->save()){
-            return apiresponse(true, 'Post updated',$document);
+        if($document->is_protected == 1){
+            if(Hash::check($request->key, $document->key)){
+                $document->updated_at = Carbon::now();
+                if($document->save()){
+                    return apiresponse(true, 'Key matched',$document);
+                }
+            }else{
+                return apiresponse(false, 'Incorrect key');
+            }
+        }else{
+            $document->updated_at = Carbon::now();
+            if($document->save()){
+                return apiresponse(true, 'Document updated',$document);
+            }
         }
+        
+        
     }
+
 
     public function deleteDocument(Request $request){
         $validator = Validator::make($request->all(), [
@@ -77,6 +114,7 @@ class PostController extends Controller
             return apiresponse(true, 'Document deleted');
         }
     }
+
 
     public function destroy(Request $request){
         $validator = Validator::make($request->all(), [
@@ -99,5 +137,17 @@ class PostController extends Controller
     }
 
 
-
+    public function removeTag(Request $request){
+        $validator = Validator::make($request->all(), [
+            'post_id'     => 'required',
+            'user_id'     => 'required'
+        ]);
+        if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
+            $Taggedfriend = Taggedfriend::where('post_id',$request->post_id)->where('user_id',$request->user_id)->delete();
+            if($Taggedfriend){
+                return apiresponse(true, 'Removed from tag');
+            }else{
+                return apiresponse(false,'Something went wrong');
+            }
+    }
 }
