@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::group(['namespace' => 'App\Http\Controllers\Api'], function () { 
+Route::group(['namespace' => 'App\Http\Controllers\Api'], function () {
 
 
     Route::post('register', 'AuthController@register');
@@ -36,7 +36,7 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('updateProfile', 'ProfileController@updateProfile');
     Route::post('searchUser', 'ProfileController@searchUser');
 
-    Route::post('addFriend', 'FriendListController@addFriend');
+
 
     //Post Module
     Route::get('getPosts','PostController@index')->name('getPosts');
@@ -61,12 +61,33 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('deleteMessage','GroupMessageController@destroy')->name('deleteMessage');
 
 
+    // USER FRIENDS
+    Route::post('addFriend', 'FriendListController@addFriend');
     Route::get('getAllFriendsRequests', 'FriendListController@getAllFriendsRequests');
     Route::post('sendRequest', 'FriendListController@sendRequest');
     Route::post('acceptFriendRequest', 'FriendListController@acceptFriendRequest');
     Route::post('rejectFriendRequest', 'FriendListController@rejectFriendRequest');
     Route::get('unFriendUser/{id}', 'FriendListController@unFriendUser');
 
+
+
+    // SETTINGS
     Route::post('toggleNotification', 'SettingsController@toggleNotification');
     Route::post('changePassword/{id}', 'SettingsController@changePassword');
+
+
+
+    // MESSAGES
+    Route::post('chatIndex', 'ChatsController@index');
+    Route::post('chatSession', 'ChatsController@checkSessionBeforeMessage');
+    Route::get('viewChatlist/{id}', 'ChatsController@show');
+    Route::post('sendMessage', 'ChatsController@sendMessage');
+
+    // CARD MODULE
+    Route::post('storeCard', 'PaymentMethodController@storeCard');
+    Route::post('updateDefaultCard/{id}', 'PaymentMethodController@updateDefaultCard');
+    Route::get('showMethod', 'PaymentMethodController@showMethod');
+    Route::post('deleteCard', 'PaymentMethodController@deleteCard');
+
+
 });
