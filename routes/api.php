@@ -75,4 +75,7 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('deleteCard', 'PaymentMethodController@deleteCard');
 
 
+    // PAGES
+    Route::get('data', 'PagesController@data');
+
 });

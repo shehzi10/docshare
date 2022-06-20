@@ -34,6 +34,7 @@ class PaymentMethodController extends Controller
 
         $stripe = new StripeClient(env("STRIPE_SECRET_KEY"));
         $date = explode("/", $request->exp_date);
+        // dd($date);
         $token = $this->stripe->tokens->create([
             'card' => [
                 'number' => $request->card_number,
