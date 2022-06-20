@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Group;
-use App\Models\GroupMember;
-use App\Models\GroupMessage;
-use App\Models\GroupDocument;
+use App\Models\{Group,GroupMember,GroupMessage,GroupDocument};
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\GroupMessageResource;
 use Auth;
