@@ -41,6 +41,7 @@ class User extends Authenticatable
         'lng',
         'is_notify',
         'status',
+        'confirmation_code'
     ];
 
     /**
