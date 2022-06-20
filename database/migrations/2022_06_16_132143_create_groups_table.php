@@ -13,15 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('post_documents', function (Blueprint $table) {
+        Schema::create('groups', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
+            $table->string('name');
             $table->text('description')->nullable();
-            $table->enum('type', ['image', 'file','video','document'])->nullable();
-            $table->foreignId('post_id')->constrained();
+            $table->string('image')->nullable();
             $table->foreignId('user_id')->constrained();
-            $table->boolean('is_protected')->default(0);
-            $table->string('key')->nullable();
             $table->timestamps();
         });
     }
@@ -33,6 +30,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('post_documents');
+        Schema::dropIfExists('groups');
     }
 };
