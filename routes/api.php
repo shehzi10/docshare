@@ -102,4 +102,8 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('subscribe', 'SubscriptionController@subscribe');
     Route::get('getSubHistory', 'SubscriptionController@getSubHistory');
 
+    //VIDEO CALL
+    Route::post('generateToken', 'VideoCallController@generateToken');
+    Route::post('declineCall', 'VideoCallController@declineCall');
+
 });
