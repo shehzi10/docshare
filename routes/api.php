@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -53,8 +54,8 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('updateGroup','GroupController@update')->name('updateGroup');
     Route::post('groupMembers','GroupController@groupMembers')->name('groupMembers');
     Route::post('removeMember','GroupController@removeMember')->name('removeMember');
-    
-    
+
+
     //Group Messages Module
     Route::post('getGroupMessages','GroupMessageController@index')->name('getGroupMessages');
     Route::post('sendGroupMessage','GroupMessageController@store')->name('sendGroupMessage');
@@ -93,5 +94,12 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
 
     // PAGES
     Route::get('data', 'PagesController@data');
+
+
+    // SUBSCRIPTION
+
+    Route::get('getAllPackages', 'SubscriptionController@getAllPackages');
+    Route::post('subscribe', 'SubscriptionController@subscribe');
+    Route::get('getSubHistory', 'SubscriptionController@getSubHistory');
 
 });
