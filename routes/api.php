@@ -54,6 +54,11 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('updateGroup','GroupController@update')->name('updateGroup');
     Route::post('groupMembers','GroupController@groupMembers')->name('groupMembers');
     Route::post('removeMember','GroupController@removeMember')->name('removeMember');
+    Route::post('leaveGroup','GroupController@leaveGroup')->name('leaveGroup');
+    Route::post('deleteGroup','GroupController@deleteGroup')->name('deleteGroup');
+    
+    
+
 
 
     //Group Messages Module

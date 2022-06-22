@@ -24,6 +24,7 @@ class PostResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
+            'user' => $this->user,
             'documents' => DocumentResource::collection($this->documents),
             'tagged_friends' => TaggFriendsResource::collection($this->taggedFriends),
         ];

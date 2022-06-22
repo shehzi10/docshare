@@ -14,9 +14,9 @@ class Message
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $user_type = "";
-    private $user = null;
-    public $message = null;
+    private $user;
+    private $chat;
+    public $isGroup;
 
     /**
      * Message constructor.
@@ -25,11 +25,11 @@ class Message
      * @param \App\Models\Message $message
      */
 
-    public function __construct($user_type, $user, $message)
+    public function __construct($user, $chat, $isGroup = false)
     {
-        $this->user_type = $user_type;
         $this->user = $user;
-        $this->message = $message;
+        $this->chat = $chat;
+        $this->isGroup = $isGroup;
     }
 
     /**
@@ -39,10 +39,7 @@ class Message
      */
     public function broadcastOn()
     {
-        $user_typee = '';
-        if ($this->user_type == "App\Models\User") {
-            $user_typee = 'user';
-        }
-        return new Channel($user_typee . '.' . $this->user->id);
+        $id = $this->isGroup === true ? $this->chat->group_id : $this->user->id;
+        return new Channel((string) $id);
     }
 }

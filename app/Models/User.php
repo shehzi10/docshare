@@ -12,6 +12,7 @@ use Laravel\Cashier\Billable;
 use App\Models\Group;
 use App\Models\GroupMessage;
 use App\Models\GroupMember;
+use App\Models\Post;
 
 
 class User extends Authenticatable
@@ -76,5 +77,10 @@ class User extends Authenticatable
     public function groupMembers()
 	{
         return $this->hasMany(GroupMember::class);
+	}
+
+    public function posts()
+	{
+        return $this->hasMany(Post::class);
 	}
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Group,GroupMember,GroupMessage,GroupDocument};
+use App\Models\{Group,GroupMember,GroupMessage,GroupDocument,Notification};
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\GroupMessageResource;
 use Auth;
@@ -53,6 +53,21 @@ class GroupMessageController extends Controller
                     $groupDocument->save();
                 }
             }
+            $message = GroupMessage::where('id',$groupMessage->id)->with('groupDocuments','user','group')->first();
+            broadcast(new \App\Events\Message(Auth::user(), $message, true))->toOthers();
+            $title = 'You have a new message from ' . Auth::user()->username. 'in '.$message->group->name ;
+            $body = $message->message;
+            foreach($message->group->members as $member){
+                SendNotification($member->user->device_id, $title, $body);
+            }
+            $notification = new Notification();
+            $notification->sender_id                =   Auth::user()->id;
+            $notification->reciever_id              =   $message->group_id;
+            $notification->title                    =   $title;
+            $notification->body                     =   $body;
+            $notification->type                     =   'group_message';
+            $notification->content_id               =   Auth::user()->id;
+            $notification->save();
             return apiresponse(true, 'Messages sent');
         }else{
             return apiresponse(false, 'Something went wrong');

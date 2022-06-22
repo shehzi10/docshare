@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostDocument;
 use App\Models\Taggedfriend;
+use App\Models\UserFriend;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
@@ -20,9 +21,14 @@ use Illuminate\Support\Facades\Hash;
 class PostController extends Controller
 {
     public function index(){
-        $posts = Post::where('user_id', Auth::user()->id)->with(['documents' => function($q){
+        $friends = UserFriend::where('user_id', Auth::user()->id)->where('status','approved')->get();
+        $a[] = Auth::user()->id;
+        foreach($friends as $friend){
+            $a[] = $friend->requested_user_id;
+        }
+        $posts = Post::whereIn('user_id', $a)->with(['documents' => function($q){
             $q->orderBy('updated_at','desc');
-        },'taggedFriends'])->simplePaginate(5);
+        },'taggedFriends','user'])->simplePaginate(5);
         $data = PostResource::collection($posts)->response()->getData(true);
         // $data['posts'] = $posts;
         return apiresponse(true, 'Posts Found', $data);
@@ -68,6 +74,17 @@ class PostController extends Controller
                     $Taggedfriend->post_id = $post->id;
                     $Taggedfriend->user_id = $value;
                     $Taggedfriend->save();
+                    $title =  Auth::user()->username .' tagged you in '.$post->name.' post' ;
+                    $body = Auth::user()->username .' tagged you in '.$post->name.' post' ;
+                    SendNotification($Taggedfriend->user->device_id, $title, $body);
+                    $notification = new Notification();
+                    $notification->sender_id                =   Auth::user()->id;
+                    $notification->reciever_id              =   $Taggedfriend->user_id;
+                    $notification->title                    =   $title;
+                    $notification->body                     =   $body;
+                    $notification->type                     =   'post';
+                    $notification->content_id               =   $post->id;
+                    $notification->save();
                 }
             }
             return apiresponse(true, 'Post uploaded');
