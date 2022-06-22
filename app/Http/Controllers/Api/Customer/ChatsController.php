@@ -118,12 +118,12 @@ class ChatsController extends Controller
             $request->file('audio')->move(public_path('images'), $fileName);
             $messageData['audio'] = $fileName;
         } else {
-            $messageData['message'] = $request->message;
+            $messageData['message'] = $request->message; 
         }
 
         $message = Message::create($messageData);
         $message = Message::find($message->id);
-        broadcast(new \App\Events\Message($messageData['sent_to_type'], $message->sent_to, $message))->toOthers();
+        broadcast(new \App\Events\Message($user, $message,false))->toOthers();
 
         $title = 'You have a new message from ' . $request->user()->username;
         $body = $message->message;
