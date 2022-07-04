@@ -12,13 +12,14 @@ class DocumentResource extends JsonResource
      * @param  \Illuminate\Http\Request  $request
      * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
-    public function toArray($request)
+    public function toArray($request) 
     {
         // return parent::toArray($request);
         return [
             'id' => $this->id,
             'name' => $this->name,
             'type' => $this->type,
+            'url' => url('public/images/'.$this->name),
             'is_protected' => $this->is_protected,
         ];
     }

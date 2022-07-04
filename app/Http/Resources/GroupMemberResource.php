@@ -3,7 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use Auth;
 class GroupMemberResource extends JsonResource
 {
     /**
@@ -15,12 +15,6 @@ class GroupMemberResource extends JsonResource
     public function toArray($request)
     {
         // return parent::toArray($request);
-        return [
-            'id' => $this->id,
-            'group_id' => $this->group_id,
-            'member' => $this->user,
-            'status' => $this->status,
-            'is_admin' => $this->is_admin,
-        ];
+            return $this->user;
     }
 }

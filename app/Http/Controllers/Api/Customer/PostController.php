@@ -13,14 +13,17 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File; 
 use App\Http\Resources\PostResource;
+use App\Http\Resources\DocumentResource;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Notification;
 
 
 
 class PostController extends Controller
 {
     public function index(){
+        
         $friends = UserFriend::where('user_id', Auth::user()->id)->where('status','approved')->get();
         $a[] = Auth::user()->id;
         foreach($friends as $friend){
@@ -28,23 +31,24 @@ class PostController extends Controller
         }
         $posts = Post::whereIn('user_id', $a)->with(['documents' => function($q){
             $q->orderBy('updated_at','desc');
-        },'taggedFriends','user'])->simplePaginate(5);
+        },'taggedFriends','user'])->paginate(10);
         $data = PostResource::collection($posts)->response()->getData(true);
+        
+       
         // $data['posts'] = $posts;
         return apiresponse(true, 'Posts Found', $data);
     }
 
 
     public function getAllDocuments(){
-        $documents = PostDocument::where('user_id', Auth::user()->id)->orderBy('updated_at','desc')->simplePaginate(5);
-        $data['documents'] = $documents;
+        $documents = PostDocument::where('user_id', Auth::user()->id)->orderBy('updated_at','desc')->paginate(5);
+        $data  = DocumentResource::collection($documents)->response()->getData(true);
         return apiresponse(true, 'Documents Found', $data);
     }
 
 
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
-            'title'         => 'required',
             'description'   => 'required',
             'documents'     => 'required',
         ]);

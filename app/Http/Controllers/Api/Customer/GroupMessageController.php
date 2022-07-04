@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Group,GroupMember,GroupMessage,GroupDocument,Notification};
+use App\Models\{Group,GroupMember,GroupMessage,GroupDocument,Notification,GroupLocation};
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\GroupMessageResource;
 use Auth;
 use File;
+use App\Events\Message;
 
 
 
@@ -19,26 +20,28 @@ class GroupMessageController extends Controller
             'group_id'         => 'required',
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
-        
         $member = GroupMember::where('group_id',$request->group_id)->where('user_id',Auth::user()->id)->first();
         if($member->status == 0){
-            $messages = GroupMessage::where('group_id',$request->group_id)->where('created_at','<',$member->updated_at)->get();
+            $messages = GroupMessage::where('group_id',$request->group_id)->where('created_at','<',$member->updated_at)->orderBy('created_at','desc')->paginate(10);
         }else{
-            $messages = GroupMessage::where('group_id',$request->group_id)->get();
+            $messages = GroupMessage::where('group_id',$request->group_id)->orderBy('created_at','desc')->paginate(10);
         }
-        $messages = GroupMessageResource::collection($messages);
+        $member->updated_at = date('Y-m-d G:i:s');
+        $member->save();
+        $messages = GroupMessageResource::collection($messages)->response()->getData(true);
         return apiresponse(true, 'Messages found', $messages);
     }
 
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
-            'message'         => 'required',
             'group_id'         => 'required',
             'user_id'         => 'required',
+            'type'         => 'required',
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
         $groupMessage = new GroupMessage();
         $groupMessage->message = $request->message;
+        $groupMessage->type = $request->type;
         $groupMessage->group_id  = $request->group_id;
         $groupMessage->user_id   = $request->user_id;
         if($groupMessage->save()){
@@ -53,8 +56,18 @@ class GroupMessageController extends Controller
                     $groupDocument->save();
                 }
             }
-            $message = GroupMessage::where('id',$groupMessage->id)->with('groupDocuments','user','group')->first();
-            broadcast(new \App\Events\Message(Auth::user(), $message, true))->toOthers();
+            if($request->has('location')){
+                $groupLocation= new GroupLocation();
+                $groupLocation->lat  = $request->location['lat'];
+                $groupLocation->long  = $request->location['long'];
+                $groupLocation->group_message_id  = $groupMessage->id;
+                $groupLocation->save();
+            }
+            $messages = GroupMessage::where('id',$groupMessage->id)->get();
+            $message = GroupMessageResource::collection($messages);
+            $message = $message->first();
+            broadcast(new Message(Auth::user(), $message->first(), true))->toOthers();
+            //dd(event(new Message(Auth::user(), $message->first(), true )));
             $title = 'You have a new message from ' . Auth::user()->username. 'in '.$message->group->name ;
             $body = $message->message;
             foreach($message->group->members as $member){
@@ -68,9 +81,11 @@ class GroupMessageController extends Controller
             $notification->type                     =   'group_message';
             $notification->content_id               =   Auth::user()->id;
             $notification->save();
-            return apiresponse(true, 'Messages sent');
+            $messages = GroupMessage::where('id',$groupMessage->id)->get();
+            $message = GroupMessageResource::collection($messages);
+            return apiresponse(true, 'Messages sent',$message->first());
         }else{
-            return apiresponse(false, 'Something went wrong');
+            return apiresponse(false, 'Something went wrong',);
         }
     }
 

@@ -75,6 +75,7 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('rejectFriendRequest', 'FriendListController@rejectFriendRequest');
     Route::get('unFriendUser/{id}', 'FriendListController@unFriendUser');
     Route::post('friendsList', 'FriendListController@getFriendsList');
+    Route::get('friendsListSearch', 'FriendListController@friendsListSearch');
 
 
 

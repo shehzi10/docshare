@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Http\Resources\GroupResource;
+use App\Models\GroupMember;
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\Paginator;
 
-class ChatsController extends Controller
+
+class ChatsController extends Controller 
 {
+    
+
     public function index(Request $request)
     {
         $search = $request->search;
@@ -52,10 +59,32 @@ class ChatsController extends Controller
                 // $chatlist[$key]['from_user']->profile_pic = $chat->to_user->profile_pic;
                 // $chatlist[$key]['to_user']->profile_pic = $mineimg;
             }
+            $chat->is_group = 0;
         }
-        // return $chatlist;
-        return apiresponse(true, 'Chatlist', $chatlist);
+        $arr = array();
+        if ($search) {
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group' => function($q) use ($request){
+                $q->where('name','like','%'.$request->search.'%');
+            }])->get();
+        }else{
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group'])->get();
+        }
+        if($groups[0]->group != null){
+            $data = GroupResource::collection($groups);
+            foreach($data as $key => $chat){    
+                $arr[] = $chat;
+            }
+        }
+        
+        foreach($chatlist as $key => $chat){
+            $arr[] = $chat;
+        }
+        usort($arr, 'date_compare');
+        $collection = collect($arr);
+        return apiresponse(true, 'Chat Found', $collection);
     }
+
+    
 
 
     public function sendMessage(Request $request){
@@ -148,7 +177,7 @@ class ChatsController extends Controller
 
     public function show($id)
     {
-        $messages = Message::where(['chatlist_id' => $id])->orderBy('created_at', 'DESC')->simplePaginate(10);
+        $messages = Message::where(['chatlist_id' => $id])->orderBy('created_at', 'DESC')->simplePaginate(2);
         if ($messages) {
             return apiresponse(true, 'Messages Found', $messages);
         } else {

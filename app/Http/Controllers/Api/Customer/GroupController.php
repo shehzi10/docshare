@@ -13,14 +13,16 @@ use Auth;
 use Carbon\Carbon;
 use File;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\Paginator;
+use App\CustomClasses\ColectionPaginate;
 
 
 class GroupController extends Controller
 {
     public function index(){
-        $groups = GroupMember::where('user_id', Auth::user()->id)->with(['group'])->get();
-        $data = GroupResource::collection($groups);  
+        $groups = GroupMember::where('user_id', Auth::user()->id)->with(['group'])->paginate(1);
+        $data = GroupResource::collection($groups)->response()->getData(true);  
         return apiresponse(true, 'Groups found',  $data);  
     }
 

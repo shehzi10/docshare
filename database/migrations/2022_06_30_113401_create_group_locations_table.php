@@ -13,12 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('group_messages', function (Blueprint $table) {
+        Schema::create('group_locations', function (Blueprint $table) {
             $table->id();
-            $table->text('message')->nullable();
-            $table->enum('type', ['message','document','location'])->nullable();
-            $table->foreignId('group_id')->constrained();
-            $table->foreignId('user_id')->constrained();
+            $table->string('lat')->nullable();
+            $table->string('long')->nullable();
+            $table->foreignId('group_message_id')->constrained();
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('group_messages');
+        Schema::dropIfExists('group_locations');
     }
 };

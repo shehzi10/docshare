@@ -13,6 +13,7 @@ use App\Models\Group;
 use App\Models\GroupMessage;
 use App\Models\GroupMember;
 use App\Models\Post;
+use App\Models\UserFriend;
 
 
 class User extends Authenticatable
@@ -82,5 +83,10 @@ class User extends Authenticatable
     public function posts()
 	{
         return $this->hasMany(Post::class);
+	}
+
+    public function friends()
+	{
+        return $this->hasMany(UserFriend::class,'requested_user_id', 'id');
 	}
 }

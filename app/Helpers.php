@@ -18,6 +18,20 @@ if (!function_exists('apiresponse')) {
     }
 }
 
+if (!function_exists('apiresponse_two')) {
+    /**
+     * @param boolean $status
+     * @param string $msg
+     * @param array|null $data
+     * @param integer $http_status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function apiresponse_two($data = null, $http_status = 200)
+    {
+        return response()->json($data, $http_status);
+    }
+}
+
 
 if (!function_exists('convertAddressToLatLng')) {
     /**
@@ -67,6 +81,21 @@ if (!function_exists('convertLatLngToAddress')) {
         } else {
             return false;
         }
+    }
+}
+
+if (!function_exists('date_compare')) {
+    /**
+     *
+     * Convert Address to lat lng
+     * @param string $address
+     * @return array|boolean
+     */
+    function date_compare($element1, $element2)
+    {
+        $datetime1 = strtotime($element1['created_at']);
+        $datetime2 = strtotime($element2['created_at']);
+        return $datetime1 - $datetime2;
     }
 }
 

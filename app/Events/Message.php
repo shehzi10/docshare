@@ -39,7 +39,12 @@ class Message
      */
     public function broadcastOn()
     {
+        if($this->isGroup){
+            $id = $this->chat->group_id;
+        }else{
+            $id = $this->user->id;
+        }
         $id = $this->isGroup === true ? $this->chat->group_id : $this->user->id;
-        return new Channel((string) $id);
+        return new Channel('user'.$id);
     }
 }
