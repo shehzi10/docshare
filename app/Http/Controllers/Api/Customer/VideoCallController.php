@@ -20,9 +20,9 @@ class VideoCallController extends Controller
             'id'        =>      'required',
             'is_group'  =>      'required',
         ]);
-        if ($validator->fails())
-        return apiresponse(false, implode("\n", $validator->errors()->all()), null, 400);
-        
+        if ($validator->fails()){
+            return apiresponse(false, implode("\n", $validator->errors()->all()), null, 400);
+        }
         if($request->is_group == 1){
             $group = Group::where('id', $request->id)->with(['members' => function($q)use ($request) {
                 $q->where('user_id', '<>', $request->user()->id);
@@ -30,101 +30,118 @@ class VideoCallController extends Controller
             if (!$group) {
                 return apiresponse(true, 'Video Call', "Group not found");
             }
+            $res = $this->sendVideoCallNotification(1, $group, 1);
+            $data = [
+                'to_user' => $group->members,
+                'token' => $res['token'],
+                'channel' => $res['channel'],
+                'from_call' => $group,
+                'is_group' => 1,
+            ];
             foreach($group->members as $member){
-                // return $member->id;
-                $res = $this->sendVideoCallNotification($member->user_id, $group, 1);
+                $title  =   "Incoming Video Call From ";
+                $body   =   "You have a video call from " . $group->name;
+                $user = User::find($member->user_id);
+                SendNotification($user->device_id, $title, $body, $data);
+                $notification = new Notification();
+                $notification->sender_id                    =   $group->id;
+                $notification->reciever_id                  =   $user->id;
+                $notification->title                        =   $title;
+                $notification->body                         =   $body;
+                $notification->content_id                   =   $group->id;
+                $notification->type                         =   "video_call";
+                $notification->save();
             }
-            if($res['status']){
-                return apiresponse(true, 'Video Call from group');
+            if($res){
+                return apiresponse(true, 'Video Call', ['token' => $res['token'], 'channel' => $res['channel'],'from' => $group ]);
             }
-            
-            
         }else{
             $user = User::where('id', $request->id)->first();
             if (!$user) {
                 return apiresponse(true, 'Video Call', "User not found");
             }
             $res = $this->sendVideoCallNotification($user->id, $request->user(), 0);
-            return apiresponse(true, 'Video Call', ['token' => $res['token'], 'channel' => $res['channel'], 'user' => $res['user']]);
+            $data = [
+                'to_user' => $user,
+                'token' => $res['token'],
+                'channel' => $res['channel'],
+                'from_call' => request()->user(),
+                'is_group' => 0,
+            ];
+            $title  =   "Incoming Video Call";
+            $body   =   "You have a video call from " . $request->user()->username;
+            SendNotification($user->device_id, $title, $body, $data);
+            $notification = new Notification();
+            $notification->sender_id                    =   auth()->user()->id;
+            $notification->reciever_id                  =   $user->id;
+            $notification->title                        =   $title;
+            $notification->body                         =   $body;
+            $notification->content_id                   =   auth()->user()->id;
+            $notification->type                         =   "video_call";
+            $notification->save();
+            return apiresponse(true, 'Video Call', ['token' => $res['token'], 'channel' => $res['channel'],'from' => $res['from'] ]);
         }
-        
-        // $appID = "ac7d15a624f648e3b96bb1829c8d7275";
-        // $appCertificate = "5ed734fbc1854db58730304d40e48f0d";
-        // $channelName = "docshare" . $user->id;
-        // $role = RtcTokenBuilder::RolePublisher;
-        // $expireTimeInSeconds = 360000;
-        // $currentTimestamp = (new DateTime("now", new DateTimeZone('UTC')))->getTimestamp();
-        // $privilegeExpiredTs = $currentTimestamp + $expireTimeInSeconds;
-        // $token = RtcTokenBuilder::buildTokenWithUid($appID, $appCertificate, $channelName, "", $role, $privilegeExpiredTs);
-        // $title  =   "Incoming Video Call";
-        // $body   =   "You have a video call from " . $request->user()->username;
-        // $data = [
-        //     'to_user' => $user,
-        //     "token" => $token,
-        //     'channel' => $channelName,
-        //     'from_call' => request()->user(),
-        // ];
-        // $res = SendNotification($user->device_id, $title, $body, $data);
-        // $notification = new Notification();
-        // $notification->sender_id                    =   auth()->user()->id;
-        // $notification->reciever_id                  =   $user->id;
-        // $notification->title                        =   $title;
-        // $notification->body                         =   $body;
-        // $notification->content_id                   =   auth()->user()->id;
-        // $notification->type                         =   "video_call";
-        // $notification->save();
-        // return apiresponse(true, 'Video Call', ['token' => $token, 'channel' => $channelName, 'user' => $user]);
     }
 
 
-    private function sendVideoCallNotification($id, $from, $is_group){
+    private function sendVideoCallNotification($id = 1, $from, $is_group){
         $user = User::where('id', $id)->first();
         if (!$user) {
             return false;
         }
         $appID = "ac7d15a624f648e3b96bb1829c8d7275";
         $appCertificate = "5ed734fbc1854db58730304d40e48f0d";
-        $channelName = "docshare" . $user->id;
+        $id = $is_group == 1 ? $from->id : $user->id;
+        $channelName = "docshare" . $id; 
         $role = RtcTokenBuilder::RolePublisher;
         $expireTimeInSeconds = 360000;
         $currentTimestamp = (new DateTime("now", new DateTimeZone('UTC')))->getTimestamp();
         $privilegeExpiredTs = $currentTimestamp + $expireTimeInSeconds;
         $token = RtcTokenBuilder::buildTokenWithUid($appID, $appCertificate, $channelName, "", $role, $privilegeExpiredTs);
-        $title  =   "Incoming Video Call";
-        $body   =   "You have a video call from " . $is_group == 1?$from->name:$from->username;
         $data = [
-            'to_user' => $user,
             "token" => $token,
             'channel' => $channelName,
-            'from_call' => $from,
+            'from' => $from,
         ];
-        $res = SendNotification($user->device_id, $title, $body, $data);
-        $notification = new Notification();
-        $notification->sender_id                    =   $from->id;
-        $notification->reciever_id                  =   $user->id;
-        $notification->title                        =   $title;
-        $notification->body                         =   $body;
-        $notification->content_id                   =   $from->id;
-        $notification->type                         =   "video_call";
-        $notification->save();
-        return  ['token' => $token, 'channel' => $channelName, 'user' => $user,'status' => true];
+        return  $data;
     }
 
     public function declineCall(Request $request)
     {
-        $user = User::where('id', $request->id)->first();
-        $title  =  "Call Declined";
-        $body = "";
-        SendNotification($user->device_id, $title, $body);
+        if($request->is_group == 1){
+            $group = Group::where('id', $request->id)->first();
+            foreach($group->members as $member){
+                $title  =   "Call Declined";
+                $body   =   "";
+                $user = User::find($member->user_id);
+                SendNotification($user->device_id, $title, $body);
+                $notification = new Notification();
+                $notification->sender_id                    =   $group->id;
+                $notification->reciever_id                  =   $user->id;
+                $notification->title                        =   $title;
+                $notification->body                         =   $body;
+                $notification->content_id                   =   $group->id;
+                $notification->type                         =   "video_call";
+                $notification->save();
+            }
+            return apiresponse(true, 'Video Call', "Call Declined");
+        }else{
+            $user = User::where('id', $request->id)->first();
+            $title  =  "Call Declined";
+            $body = "";
+            SendNotification($user->device_id, $title, $body);
+            $notification = new Notification();
+            $notification->sender_id                    =   auth()->user()->id;
+            $notification->reciever_id                  =   $user->id;
+            $notification->title                        =   $title;
+            $notification->body                         =   $body;
+            $notification->content_id                   =   auth()->user()->id;
+            $notification->type                         =   "video_call";
+            $notification->save();
+            return apiresponse(true, 'Video Call', "Call Declined");
+        }
+        
 
-        $notification = new Notification();
-        $notification->sender_id                    =   auth()->user()->id;
-        $notification->reciever_id                  =   $user->id;
-        $notification->title                        =   $title;
-        $notification->body                         =   $body;
-        $notification->content_id                   =   auth()->user()->id;
-        $notification->type                         =   "video_call";
-        $notification->save();
-        return apiresponse(true, 'Video Call', "Call Declined");
+       
     }
 }
