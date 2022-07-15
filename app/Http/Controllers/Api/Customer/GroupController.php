@@ -20,16 +20,24 @@ use App\CustomClasses\ColectionPaginate;
 
 class GroupController extends Controller
 {
-    public function index(){
-        $groups = GroupMember::where('user_id', Auth::user()->id)->with(['group'])->paginate(1);
+    public function index(Request $request){
+        $groups = GroupMember::where('user_id', Auth::user()->id)->with(['group'])->paginate(10);
         $data = GroupResource::collection($groups)->response()->getData(true);  
-        return apiresponse(true, 'Groups found',  $data);  
+        if($request->filled('search')){
+            $filtered = collect($data['data']);
+            $filtered = $filtered->where('name', 'LIKE', '%' .$request->search . '%')->toArray();
+            return apiresponse(true, 'Groups found', $filtered);
+        }else{
+            return apiresponse(true, 'Groups found', $data);
+        }
+       
+        // $filtered->all();
+        // return apiresponse(true, 'Groups found', $filtered->all());  
     }
 
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
             'name'         => 'required',
-            'description'   => 'required',
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
         $group = new Group();

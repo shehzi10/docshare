@@ -118,7 +118,9 @@ if (!function_exists('SendNotification')) {
                 $message = CloudMessage::withTarget('token', $device_id)
                     ->withNotification(Notification::create($title, $body));
                 if ($data) {
-                    $message->withData($data);
+                    $message = CloudMessage::withTarget('token', $device_id)
+                    ->withNotification(Notification::create($title, $body))
+                    ->withData($data);
                 }
                 $messaging->send($message);
             }

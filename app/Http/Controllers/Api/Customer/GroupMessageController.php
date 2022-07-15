@@ -66,7 +66,7 @@ class GroupMessageController extends Controller
             $messages = GroupMessage::where('id',$groupMessage->id)->get();
             $message = GroupMessageResource::collection($messages);
             $message = $message->first();
-            broadcast(new Message(Auth::user(), $message->first(), true))->toOthers();
+           
             //dd(event(new Message(Auth::user(), $message->first(), true )));
             $title = 'You have a new message from ' . Auth::user()->username. 'in '.$message->group->name ;
             $body = $message->message;
@@ -83,6 +83,7 @@ class GroupMessageController extends Controller
             $notification->save();
             $messages = GroupMessage::where('id',$groupMessage->id)->get();
             $message = GroupMessageResource::collection($messages);
+            broadcast(new Message( json_decode( json_encode($message->first()) ) , true))->toOthers();
             return apiresponse(true, 'Messages sent',$message->first());
         }else{
             return apiresponse(false, 'Something went wrong',);

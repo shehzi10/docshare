@@ -13,11 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('group_locations', function (Blueprint $table) {
+        Schema::create('message_locations', function (Blueprint $table) {
             $table->id();
             $table->string('lat')->nullable();
             $table->string('long')->nullable();
-            $table->foreignId('group_message_id');
+            $table->foreignId('message_id');
             $table->timestamps();
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('group_locations');
+        Schema::dropIfExists('message_locations');
     }
 };
