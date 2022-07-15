@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\MessageLocation;
+
 
 class Message extends Model
 {
@@ -32,4 +34,9 @@ class Message extends Model
     {
         return User::where(['id'=>$this->sent_to_id])->first();
     }
+
+    public function location()
+	{
+        return $this->hasOne(MessageLocation::class);
+	}
 }

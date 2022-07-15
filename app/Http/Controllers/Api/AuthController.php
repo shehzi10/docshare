@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ForgotPassword;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Stripe\StripeClient;
 
@@ -82,6 +85,75 @@ class AuthController extends Controller
             }
         } else {
             return apiresponse(false, 'User not Found!');
+        }
+    }
+
+    public function sendForgotPasswordEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return apiresponse(false, implode("\n", $validator->errors()->all()));
+        } 
+
+        try {   
+            $user = User::where('email', $request->email)->first();
+            $code = substr(md5(rand()), 0, 4);
+            if (!$user) {
+                return apiresponse(false, 'Email does not exist');
+            } else {
+                $user->confirmation_code = $code;
+                if($user->save()) {
+                    Mail::to($user->email)->send(new ForgotPassword($user));
+                    return apiresponse(true, 'Password reset link sent to your email', $user);
+                } else {
+                    return apiresponse(false, 'Some error occurred. Please try again');
+                }
+            }
+        } catch(Exception $e) {
+            return apiresponse(false, $e->getMessage());
+        }
+    }
+
+    public function verifyForgotPin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required',
+            'code'  => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return apiresponse(false, implode("\n", $validator->errors()->all()));
+        } 
+
+        $user = User::where('email', $request->email)->first();
+        if($request->code == $user->confirmation_code){
+            return apiresponse(true, 'Confirmation code has been matched successfully', $user);
+        }
+
+        return apiresponse(false, 'Code missmatch');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required',
+            'password' => 'required',
+            'password_confirm' => 'required|same:password'
+        ]);
+
+        if ($validator->fails()) {
+            return apiresponse(false, implode("\n", $validator->errors()->all()));
+        }
+
+        try {
+            $pass = Hash::make($request->password);
+            User::where('email', $request->email)->update(['password' => $pass]);
+            return apiresponse(true, "password updated successfully");
+        } catch (Exception $e) {
+            return apiresponse(false, $e->getMessage());
         }
     }
 

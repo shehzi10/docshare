@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('group_documents', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('type', ['image', 'file','video','document'])->nullable();
+            $table->enum('type', ['image', 'file','video','document','location'])->nullable();
             $table->foreignId('group_message_id')->constrained();
             $table->timestamps();
         });

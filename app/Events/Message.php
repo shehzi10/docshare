@@ -10,13 +10,13 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class Message
+class Message implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $user_type = "";
-    private $user = null;
-    public $message = null;
+    private $user;
+    private $chat;
+    public $isGroup;
 
     /**
      * Message constructor.
@@ -25,11 +25,11 @@ class Message
      * @param \App\Models\Message $message
      */
 
-    public function __construct($user_type, $user, $message)
+    public function __construct( $chat, $isGroup = false)
     {
-        $this->user_type = $user_type;
-        $this->user = $user;
-        $this->message = $message;
+        $this->chat = $chat;
+        // dd($this->chat);
+        $this->isGroup = $isGroup;
     }
 
     /**
@@ -37,12 +37,15 @@ class Message
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
-    public function broadcastOn()
+    public function broadcastWith()
     {
-        $user_typee = '';
-        if ($this->user_type == "App\Models\User") {
-            $user_typee = 'user';
-        }
-        return new Channel($user_typee . '.' . $this->user->id);
+        return [
+            'data' => $this->chat,
+        ];
+    }
+     public function broadcastOn()
+    {
+        $id = $this->isGroup === true ? $this->chat->group->id : $this->chat->chatlist_id;
+        return new Channel($id);
     }
 }

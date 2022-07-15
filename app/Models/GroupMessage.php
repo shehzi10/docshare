@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\GroupDocument;
+use App\Models\GroupLocation;
 
 class GroupMessage extends Model
 {
@@ -25,5 +26,10 @@ class GroupMessage extends Model
     public function groupDocuments()
 	{
         return $this->hasMany(GroupDocument::class);
+	}
+
+    public function grouplocation()
+	{
+        return $this->hasOne(GroupLocation::class);
 	}
 }

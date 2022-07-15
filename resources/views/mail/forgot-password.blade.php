@@ -1,11 +1,7 @@
 @component('mail::message')
-# Introduction
+# Dear {{$user->username}} 
 
-The body of your message.
-
-@component('mail::button', ['url' => ''])
-Button Text
-@endcomponent
+{{$user->confirmation_code}} use this code to reset your Doc Share account password.
 
 Thanks,<br>
 {{ config('app.name') }}

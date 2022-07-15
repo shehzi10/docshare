@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserFriend;
 use Illuminate\Http\Request;
+use App\Http\Resources\UserResource;
+use Auth;
+
 
 class ProfileController extends Controller
 {
@@ -36,15 +40,50 @@ class ProfileController extends Controller
 
         if($request->search)
         {
-            $user = User::where('username', 'LIKE', '%' .$request->search . '%')->orderBy('created_at', 'DESC')->simplePaginate(10);
-            return apiresponse(true, 'User with names found', $user);
+            $user = User::where('username', 'LIKE', '%' .$request->search . '%')->orderBy('created_at', 'DESC')->paginate(2);
+            $user = UserResource::collection($user)->response()->getData(true);  
+            foreach($user['data'] as $key => $friend){
+                $UserFriend = UserFriend::where('user_id',Auth::user()->id)->where('requested_user_id',$friend['id'])->first();
+                if($UserFriend){
+                    if($UserFriend->status == 'approved'){
+                        $user['data'][$key]['is_friend'] = true;
+                        $user['data'][$key]['status'] = $UserFriend->status;
+                    }else{
+                        $user['data'][$key]['is_friend'] = false;
+                        $user['data'][$key]['status'] = $UserFriend->status;
+                    }
+                }else{
+                    $user['data'][$key]['is_friend'] = false;
+                    $user['data'][$key]['status'] = null;
+                }
+                
+            }
+            $user['success'] = true;
+            $user['message'] = 'All Users Found';
+            return apiresponse_two( $user);
         }
-
         else{
-            $user = User::orderBy('created_at', 'DESC')->simplePaginate(10);
-            return apiresponse(true, 'All Users Found', $user);
+            $user = User::orderBy('created_at', 'DESC')->paginate(2);
+            $user = UserResource::collection($user)->response()->getData(true);
+            foreach($user['data'] as $key => $friend){
+                $UserFriend = UserFriend::where('user_id',Auth::user()->id)->where('requested_user_id',$friend['id'])->first();
+                if($UserFriend){
+                    if($UserFriend->status == 'approved'){
+                        $user['data'][$key]['is_friend'] = true;
+                        $user['data'][$key]['status'] = $UserFriend->status;
+                    }else{
+                        $user['data'][$key]['is_friend'] = false;
+                        $user['data'][$key]['status'] = $UserFriend->status;
+                    }
+                }else{
+                    $user['data'][$key]['is_friend'] = false;
+                    $user['data'][$key]['status'] = null;
+                }
+            }
+            $user['success'] = true;
+            $user['message'] = 'All Users Found';
+            return apiresponse_two( $user);
         }
-
     }
 
 

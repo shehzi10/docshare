@@ -8,24 +8,28 @@ use App\Models\User;
 use App\Models\UserFriend;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\UserResource;
 use Carbon;
+use Auth;
 
 use function GuzzleHttp\Promise\all;
 
 class FriendListController extends Controller
 {
 
-    public function getAllFriendsRequests(){
+    public function getAllFriendsRequests()
+    {
         $user = request()->user();
 
         $requests = UserFriend::where('requested_user_id', $user->id)->orderBy('created_at', 'DESC')->simplePaginate(10);
         return apiresponse(true, 'All friends requestes', $requests);
     }
 
-    public function sendRequest(Request $request){
+    public function sendRequest(Request $request)
+    {
 
 
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'requested_user_id'     =>      'required',
         ]);
 
@@ -37,7 +41,8 @@ class FriendListController extends Controller
         $requested_user_id          =   $request->requested_user_id;
         $friendRequest = new UserFriend();
 
-        $requestUser = User::findOrFail($request->id);
+        $requestUser = User::findOrFail($request->requested_user_id);
+
         $friendRequest->user_id = $user_id;
         $friendRequest->requested_user_id = $requested_user_id;
         $friendRequest->save();
@@ -57,15 +62,15 @@ class FriendListController extends Controller
         $notification->content_id                   =   auth()->user()->id;
         $notification->save();
 
-        if($friendRequest){
+        if ($friendRequest) {
             return apiresponse(true, 'Friend request has been sent successfully', $friendRequest);
-        }
-        else{
+        } else {
             return apiresponse(false, 'Some error occurred, please try again');
         }
     }
 
-    public function acceptFriendRequest(Request $request){
+    public function acceptFriendRequest(Request $request)
+    {
 
         $accept =  UserFriend::findOrFail($request->id);
 
@@ -93,10 +98,9 @@ class FriendListController extends Controller
 
         $notification->save();
 
-        if($accept){
+        if ($accept) {
             return apiresponse(true, 'Friend request has been accepted', $accept);
-        }
-        else{
+        } else {
             return apiresponse(false, 'Some error occurred, please try again');
         }
     }
@@ -105,8 +109,8 @@ class FriendListController extends Controller
 
 
 
-    public function rejectFriendRequest(Request $request){
-
+    public function rejectFriendRequest(Request $request)
+    {
         $accept =  UserFriend::findOrFail($request->id);
 
         $accept->is_followed        =       0;
@@ -133,22 +137,65 @@ class FriendListController extends Controller
 
         $notification->save();
 
-        if($accept){
+        if ($accept) {
             return apiresponse(true, 'Friend request has been rejected', $accept);
-        }
-        else{
+        } else {
             return apiresponse(false, 'Some error occurred, please try again');
         }
     }
 
-
-    public function unFriendUser($id){
-        $request = UserFriend::findOrFail($id);
-        if($request){
-            UserFriend::findOrFail($id)->delete();
+    public function unFriendUser($id)
+    {
+        $request = UserFriend::where('user_id',Auth::user()->id)->where('requested_user_id',$id)->first();
+        if ($request->delete()) {
             return apiresponse(true, 'Unfriended Successfully');
+        }else{
+            return apiresponse(false, 'User not found');
         }
     }
 
+    public function getFriendsList(Request $request)
+    {
+        $user = Auth::user();
+        if($request->search != null){
+            $friends = UserFriend::where('user_id',$user->id)->where('status', 'approved')
+            ->with(['requestedUser' => function($q)use ($request) {
+            $q->where('username', 'LIKE', '%' .$request->search . '%');
+            }])->get();
+        }else{
+            $friends = UserFriend::where('user_id',$user->id)->where('status', 'approved')
+            ->with('requestedUser')->get();
+        }
+        $array = array();
+        if($friends){
+            foreach($friends as $key => $friend){
+                if($friend->requestedUser != null){
+                    $array [] = $friend->requestedUser;
+                }
+            }
+            return apiresponse(true, 'Record found', $array);
+        }else{
+            return apiresponse(false, 'friends not  found');
+        }
+        
+        
+    }
 
+    public function friendsListSearch(Request $request)
+    {
+        $user = Auth::user();
+        
+        // $friends = UserFriend::where('user_id',$user->id)->where('status', 'approved')
+        // ->with('requestedUser')->get();
+        // return $friends;
+        $array = array();
+        if($friends){
+            foreach($friends as $friend){
+                $array [] = $friend->requestedUser;   
+            }
+            return apiresponse(true, 'Record found', $array);
+        }else{
+            return apiresponse(false, 'friends not  found');
+        }        
+    }
 }

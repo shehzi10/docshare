@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('group_messages', function (Blueprint $table) {
             $table->id();
             $table->text('message')->nullable();
+            $table->enum('type', ['message','document','location'])->nullable();
             $table->foreignId('group_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->timestamps();
