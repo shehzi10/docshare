@@ -49,7 +49,7 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
 
 
     //Group Chat Module
-    Route::get('getGroups','GroupController@index')->name('getGroups');
+    Route::post('getGroups','GroupController@index')->name('getGroups');
     Route::post('createGroup','GroupController@store')->name('createGroup');
     Route::post('updateGroup','GroupController@update')->name('updateGroup');
     Route::post('groupMembers','GroupController@groupMembers')->name('groupMembers');
