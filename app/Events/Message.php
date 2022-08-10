@@ -28,7 +28,7 @@ class Message implements ShouldBroadcast
     public function __construct( $chat, $isGroup = false)
     {
         $this->chat = $chat;
-        // dd($this->chat);
+        // dd($this->chat->chatlist_id);
         $this->isGroup = $isGroup;
     }
 
@@ -45,7 +45,16 @@ class Message implements ShouldBroadcast
     }
      public function broadcastOn()
     {
-        $id = $this->isGroup === true ? $this->chat->group->id : $this->chat->chatlist_id;
+        if($this->isGroup === true){
+            $id = $this->chat->group->id;
+        }
+        if($this->isGroup === false){
+            if(isset( $this->chat->chatlist_id)){
+                $id = $this->chat->chatlist_id;
+            }else{
+                $id = $this->chat->id; 
+            }
+        }
         return new Channel($id);
     }
 }

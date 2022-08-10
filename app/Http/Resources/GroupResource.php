@@ -36,7 +36,7 @@ class GroupResource extends JsonResource
             'created_at' => isset($last_message->created_at)?$last_message->created_at:$this->group->created_at,
             'message_count' => $count,
             'last_message' => $last_message,
-            'members' => GroupMemberResource::collection($this->group->members),
+            'members' => GroupMemberResource::collection($this->group->members->where('status',1)),
         ];
     }
 }

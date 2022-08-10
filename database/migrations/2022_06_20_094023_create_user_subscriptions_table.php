@@ -17,8 +17,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id');
             $table->string('plan_id');
+            $table->string('subscription_id');
             $table->string('price')->nullable();
             $table->string('payment_method_id');
+            $table->boolean('status')->nullable();
             $table->timestamps();
         });
     }

@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->text('description')->nullable();
             $table->enum('type', ['image', 'file','video','document'])->nullable();
-            $table->foreignId('post_id')->constrained();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('post_id');
+            $table->foreignId('user_id');
             $table->boolean('is_protected')->default(0);
             $table->string('key')->nullable();
             $table->timestamps();

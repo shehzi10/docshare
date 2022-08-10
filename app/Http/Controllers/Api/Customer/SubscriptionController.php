@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\User;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\UserSubscription;
 use Illuminate\Http\Request;
 use Stripe\StripeClient;
+use App\Http\Resources\SubscriptionResource;
+
 
 class SubscriptionController extends Controller
 {
@@ -27,40 +29,19 @@ class SubscriptionController extends Controller
             $id = $request->user()->id;
         }
         $user = User::where("id", $id)->first();
-
         try {
-
-         $payment = PaymentMethod::where(['user_id' => $id, 'default_card'=> '1'])->first();
-        //  dd($payment);
-         if ($request->source_id == "") {
-             $date = explode("/", $request->exp_date);
-
-             $token = $this->stripe->tokens->create([
-                 'card' => [
-                     'number' => $request->card_number,
-                     'exp_month' => $date[0],
-                     'exp_year' => $date[1],
-                     'cvc' => $request->cvc,
-                    ],
-                ]);
-
-                $stripe_customer_id = $user->stripe_customer_id;
-                $stripeCustomer = $this->stripe->customers->retrieve($stripe_customer_id);
-               //                return response()->json(["status" => "error", "data" => $stripeCustomer]);
-               $willBeDefault = ($stripeCustomer->default_source == null) ? true : false;
-               $source = $this->stripe->customers->createSource($stripe_customer_id, [
-                   'source' => $token
-               ]);
-               //                echo"<pre>"; print_r($token); die();
-               $pm = PaymentMethod::create([
-                   'card_brand' => $source->brand,
-                   'stripe_source_id' => $source->id,
-                   'card_end_number' => $source->last4,
-                   'user_id' => $user->stripe_customer_id,
-                   'default_card' => $willBeDefault,
-               ]);
-               $request->source_id = $source->id;
-           }
+            $payment = PaymentMethod::where(['user_id' => $id, 'default_card'=> '1'])->first();
+            $userSubscription = UserSubscription::where('user_id',$user->id)->where('status',true)->get();
+            if($userSubscription != null){
+                foreach($userSubscription as $sub){
+                    $this->stripe->subscriptions->cancel(
+                        $sub->subscription_id,
+                        []
+                    );
+                    $sub->status = 0;
+                    $sub->save();
+                }
+            }
             $subscribe = $this->stripe->subscriptions->create([
                 'customer' => $user->stripe_customer_id,
 
@@ -69,19 +50,23 @@ class SubscriptionController extends Controller
                 ],
             ]);
             $plan = Subscription::where(['plan_id' => $request->plan_id])->first();
-            $packages = UserSubscription::create([
-                'user_id'                   =>  $user->id,
-                'plan_id'                   =>  $plan->id,
-                'price'                     =>  $plan->price,
-                'payment_method_id'         =>  $payment->stripe_source_id,
-
-            ]);
-            // var_dump($packages);die();
-            $user = User::where("users.id", '=', $user->id)->first();
-//                ->leftjoin('user_subscriptions', "users.id", '=', "user_subscriptions.user_id")
-//                ->select("users.*", "user_subscriptions.id as subscription_package_id")
-
-          return apiresponse(true,'Subscription Successfull', $user);
+            if($subscribe->id){
+                $packages = UserSubscription::create([
+                    'user_id'                   =>  $user->id,
+                    'plan_id'                   =>  $plan->plan_id,
+                    'subscription_id'           =>  $subscribe->id,
+                    'subscriptions_id'          =>  $plan->id,
+                    'price'                     =>  $plan->price,
+                    'payment_method_id'         =>  $payment->stripe_source_id,
+                    'status'                    =>  1,
+    
+                ]);
+                $user = User::with(['userSubscription' => function($q){
+                    $q->with('subscription')->get();
+                }])->find($user->id);
+              return apiresponse(true,'Subscription Successfull', $user);
+            }
+            
         } catch (\Exception $e) {
             // return var_dump($user);
            return apiresponse(false, $e->getMessage());
@@ -100,6 +85,7 @@ class SubscriptionController extends Controller
                 $packages[$key]['is_subscribed'] = true;
             }
         }
+        $packages = SubscriptionResource::collection($packages);
     }
         return apiresponse(true, 'Packages Found',$packages);
     }

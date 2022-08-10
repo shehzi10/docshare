@@ -28,6 +28,11 @@ class GroupMessage extends Model
         return $this->hasMany(GroupDocument::class);
 	}
 
+    public function groupSharedDocument()
+	{
+        return $this->hasOne(GroupSharedDocument::class);
+	}
+
     public function grouplocation()
 	{
         return $this->hasOne(GroupLocation::class);

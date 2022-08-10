@@ -9,7 +9,7 @@ class PaymentMethod extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'card_brand', 'stripe_source_id', 'card_end_number', 'default_card'];
+    protected $fillable = ['user_id', 'card_brand', 'stripe_source_id', 'card_end_number', 'default_card','exp_date'];
 
 
     public function user(){

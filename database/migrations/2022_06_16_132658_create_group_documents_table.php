@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('type', ['image', 'file','video','document','location'])->nullable();
-            $table->foreignId('group_message_id')->constrained();
+            $table->foreignId('group_message_id');
             $table->timestamps();
         });
     }

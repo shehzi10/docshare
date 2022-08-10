@@ -27,8 +27,6 @@ class FriendListController extends Controller
 
     public function sendRequest(Request $request)
     {
-
-
         $validator = Validator::make($request->all(), [
             'requested_user_id'     =>      'required',
         ]);
@@ -71,13 +69,18 @@ class FriendListController extends Controller
 
     public function acceptFriendRequest(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'notification_id'   =>      'required',
+            'id'                =>      'required',
+        ]);
 
-        $accept =  UserFriend::findOrFail($request->id);
-
+        if ($validator->fails()) {
+            return apiresponse(false, implode("\n", $validator->errors()->all()));
+        }
+        $accept =  UserFriend::where('user_id',$request->id)->first();
         $accept->followed_back      =       1;
         $accept->status             =       'approved';
         $accept->accepted_date      =       Carbon\Carbon::now();
-
         $accept->save();
 
         $requested_user = User::where('id', $accept->user_id)->first();
@@ -86,18 +89,18 @@ class FriendListController extends Controller
         $body   =   auth()->user()->username . " has accepted your friend request";
 
         SendNotification($requested_user->device_id, $title, $body);
-
+        $deleteNotification = Notification::findOrFail($request->notification_id);
+        if($deleteNotification != null){
+            $deleteNotification->delete();
+        }
         $notification = new Notification();
-
         $notification->sender_id                    =   auth()->user()->id;
         $notification->reciever_id                  =   $requested_user->id;
         $notification->title                        =   $title;
         $notification->body                         =   $body;
         $notification->content_id                   =   auth()->user()->id;
-        $notification->type                         =   "friend_request";
-
+        $notification->type                         =   "request_accepted";
         $notification->save();
-
         if ($accept) {
             return apiresponse(true, 'Friend request has been accepted', $accept);
         } else {
@@ -111,7 +114,15 @@ class FriendListController extends Controller
 
     public function rejectFriendRequest(Request $request)
     {
-        $accept =  UserFriend::findOrFail($request->id);
+        $validator = Validator::make($request->all(), [
+            'notification_id'   =>      'required',
+            'id'                =>      'required',
+        ]);
+
+        if ($validator->fails()) {
+            return apiresponse(false, implode("\n", $validator->errors()->all()));
+        }
+        $accept =  UserFriend::where('user_id',$request->id)->first();
 
         $accept->is_followed        =       0;
         $accept->status             =       'rejected';
@@ -125,7 +136,10 @@ class FriendListController extends Controller
         $body   =   auth()->user()->username . " has rejected your friend request";
 
         SendNotification($requested_user->device_id, $title, $body);
-
+        $deleteNotification = Notification::findOrFail($request->notification_id);
+        if($deleteNotification != null){
+            $deleteNotification->delete();
+        }
         $notification = new Notification();
 
         $notification->sender_id                    =   auth()->user()->id;
@@ -133,7 +147,7 @@ class FriendListController extends Controller
         $notification->title                        =   $title;
         $notification->body                         =   $body;
         $notification->content_id                   =   auth()->user()->id;
-        $notification->type                         =   "friend_request";
+        $notification->type                         =   "request_rejected";
 
         $notification->save();
 
@@ -157,21 +171,26 @@ class FriendListController extends Controller
     public function getFriendsList(Request $request)
     {
         $user = Auth::user();
-        if($request->search != null){
-            $friends = UserFriend::where('user_id',$user->id)->where('status', 'approved')
-            ->with(['requestedUser' => function($q)use ($request) {
-            $q->where('username', 'LIKE', '%' .$request->search . '%');
-            }])->get();
-        }else{
-            $friends = UserFriend::where('user_id',$user->id)->where('status', 'approved')
-            ->with('requestedUser')->get();
-        }
+        $friends = UserFriend::where('user_id',$user->id)->orwhere('requested_user_id',$user->id)
+        ->where('status', 'approved')
+        ->with('requestedUser','recieverUser')->get();
         $array = array();
         if($friends){
             foreach($friends as $key => $friend){
-                if($friend->requestedUser != null){
-                    $array [] = $friend->requestedUser;
+                if($friend->requested_user_id == Auth::user()->id){
+                    if($friend->recieverUser != null){
+                        $array [] = $friend->recieverUser;
+                    }
+                }else{
+                    if($friend->requestedUser != null){
+                        $array [] = $friend->requestedUser;
+                    }
                 }
+            }
+            if($request->search != null){
+                $array = collect($array)->filter(function ($item) use ($request) {
+                    return false !== stristr($item->username, $request->search);
+                });
             }
             return apiresponse(true, 'Record found', $array);
         }else{

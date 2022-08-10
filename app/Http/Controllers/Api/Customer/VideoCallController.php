@@ -16,6 +16,7 @@ class VideoCallController extends Controller
 {
     public function generateToken(Request $request)
     {
+
         $validator = Validator::make($request->all(),[
             'id'        =>      'required',
             'is_group'  =>      'required',
@@ -41,7 +42,7 @@ class VideoCallController extends Controller
             foreach($group->members as $member){
                 $title  =   "Incoming Video Call From ";
                 $body   =   "You have a video call from " . $group->name;
-                $user = User::find($member->user_id);
+                $user = $member->user;
                 SendNotification($user->device_id, $title, $body, $data);
                 $notification = new Notification();
                 $notification->sender_id                    =   $group->id;
@@ -86,9 +87,9 @@ class VideoCallController extends Controller
 
     private function sendVideoCallNotification($id = 1, $from, $is_group){
         $user = User::where('id', $id)->first();
-        if (!$user) {
-            return false;
-        }
+        // if (!$user) {
+        //     return false;
+        // }
         $appID = "ac7d15a624f648e3b96bb1829c8d7275";
         $appCertificate = "5ed734fbc1854db58730304d40e48f0d";
         $id = $is_group == 1 ? $from->id : $user->id;
@@ -113,7 +114,7 @@ class VideoCallController extends Controller
             foreach($group->members as $member){
                 $title  =   "Call Declined";
                 $body   =   "";
-                $user = User::find($member->user_id);
+                $user = $member->user;
                 SendNotification($user->device_id, $title, $body);
                 $notification = new Notification();
                 $notification->sender_id                    =   $group->id;
@@ -140,8 +141,5 @@ class VideoCallController extends Controller
             $notification->save();
             return apiresponse(true, 'Video Call', "Call Declined");
         }
-        
-
-       
     }
 }

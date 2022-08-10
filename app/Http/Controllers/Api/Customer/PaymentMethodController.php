@@ -58,7 +58,7 @@ class PaymentMethodController extends Controller
                 'user_id'           => $user->id,
                 'stripe_source_id'  => $source->id,
                 'default_card'      => $willBeDefault,
-                'card_name'         => $request->name,
+                'exp_date'          => $request->exp_date,
                 'card_brand'        => $source->brand,
                 'card_end_number'   => $source->last4,
             ]);

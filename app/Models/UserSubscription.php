@@ -9,7 +9,7 @@ class UserSubscription extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'plan_id', 'price', 'payment_method_id'];
+    protected $fillable = ['user_id', 'plan_id', 'price', 'payment_method_id','subscription_id','subscriptions_id','status'];
 
     public function user(){
         return $this->belongsTo(User::class, 'user_id', 'id');
@@ -17,6 +17,6 @@ class UserSubscription extends Model
 
     public function subscription()
     {
-        return $this->belongsTo(Subscription::class, 'plan_id', 'id');
+        return $this->belongsTo(Subscription::class, 'subscriptions_id', 'id');
     }
 }

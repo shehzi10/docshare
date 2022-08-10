@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Post;
+use App\Models\{Post,PostDocumentComment};
 
 class PostDocument extends Model
 {
@@ -13,5 +13,15 @@ class PostDocument extends Model
     public function post()
 	{
         return $this->belongsTo(Post::class);
+	}
+
+    public function documentComments()
+	{
+        return $this->hasMany(PostDocumentComment::class);
+	}
+
+    public function groupSharedDocument()
+	{
+        return $this->hasOne(GroupSharedDocument::class);
 	}
 }

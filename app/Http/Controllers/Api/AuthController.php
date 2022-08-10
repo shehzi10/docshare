@@ -19,7 +19,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(),[
             'username'  =>  'required',
             'email'     =>  'required|unique:users,email',
-            'passowrd'  =>  'min:8|required_with:confirm_password|same:confirm_password',
+            'password'  =>  'min:8',
         ]);
         if($validator->fails()){
             return apiresponse(false, implode("\n", $validator->errors()->all()));
@@ -64,15 +64,22 @@ class AuthController extends Controller
             'password'  => 'required|min:8'
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
-        $user = User::where('email', $request->email)->first();
-        // $user = User::where('email', $request->email)->with('userPlan')->with('userSubscription')->first();
+        // $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->with(['userSubscription' => function($q){
+            $q->with('subscription')->get();
+        }])->first();
 
         if ($user) {
             if (Hash::check($request->password, $user->password)) {
                 if ($request->has('device_id') and !empty($request->device_id)) {
                     User::find($user->id)->update(['device_id' => $request->device_id]);
-                    $user = User::find($user->id);
-                    // $user = User::with('userPlan')->with('userSubscription')->find($user->id);
+                    // $user = User::where('id',$user->id)->with('userSubscription')->get();
+                    // $user = User::with(['userSubscription' => function($q){
+                    //     $q->with('subscription')->get();
+                    // }])->find($user->id);
+                    $user = User::with(['userSubscription' => function($q){
+                        $q->with('subscription')->get();
+                    }])->find($user->id);
                 }
                 $data = [
                     'token' => $user->createToken('customer Token')->accessToken,
@@ -86,6 +93,46 @@ class AuthController extends Controller
         } else {
             return apiresponse(false, 'User not Found!');
         }
+    }
+
+    public function socialLogin(Request $request){
+        $validator = Validator::make($request->all(), [
+            'username' => 'required',
+            'email' => 'required',
+        ]);
+        if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
+        $user = User::where('email',$request->email)->with(['userSubscription' => function($q){
+            $q->with('subscription')->get();
+        }])->first();
+        if($user){
+            if ($request->has('device_id') and !empty($request->device_id)) {
+                User::find($user->id)->update(['device_id' => $request->device_id]);
+                $user = User::with(['userSubscription' => function($q){
+                    $q->with('subscription')->get();
+                }])->find($user->id);
+            }
+            $data = [
+                'token' => $user->createToken('customer Token')->accessToken,
+                'user' => $user
+            ];
+        }else{
+            $stripe = new StripeClient(env("STRIPE_SECRET_KEY"));
+            $stripeCustomer = $stripe->customers->create([
+                'email' => $request->email,
+                'name' => $request->username,
+            ]);
+            $data = $request->all();
+            $data['stripe_customer_id'] = $stripeCustomer->id;
+            $user = User::create($data);
+            $user = User::with(['userSubscription' => function($q){
+                $q->with('subscription')->get();
+            }])->find($user->id);
+            $data = [
+                'token' => $user->createToken('customer Token')->accessToken,
+                'user' => $user
+            ];
+        }
+        return apiresponse(true, 'Social Login Success', $data);
     }
 
     public function sendForgotPasswordEmail(Request $request)

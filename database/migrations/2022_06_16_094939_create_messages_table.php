@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('type')->default('text');
             $table->string('media')->nullable();
             $table->string('audio')->nullable();
-            $table->integer('image')->nullable();
+            $table->string('image')->nullable();
             $table->text('message')->nullable();
             $table->boolean('read')->default(0);
             $table->timestamps();

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\Notification;
+use App\Models\User;
 use App\Http\Resources\GroupResource;
 use App\Http\Resources\GroupMemberResource;
 use Auth;
@@ -21,13 +22,29 @@ use App\CustomClasses\ColectionPaginate;
 class GroupController extends Controller
 {
     public function index(Request $request){
-        $groups = GroupMember::where('user_id', Auth::user()->id)->with(['group'])->paginate(10);
-        $data = GroupResource::collection($groups)->response()->getData(true);  
         if($request->filled('search')){
-            $filtered = collect($data['data']);
-            $filtered = $filtered->where('name', 'LIKE', '%' .$request->search . '%')->toArray();
-            return apiresponse(true, 'Groups found', $filtered);
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group'=> function($q) use ($request){
+                $q->where('name','like','%'.$request->search.'%')->get();
+            }])->paginate(10);
+            if($groups){
+                foreach($groups as $key => $group){
+                    if($group->group == null){
+                        unset($groups[$key]);
+                    }
+                }
+                $data = GroupResource::collection($groups)->response()->getData(true);
+                return apiresponse(true, 'Groups found', $data);
+            }else{
+                $data = null;
+                return apiresponse(true, 'Groups not found', $data);
+            } 
+           
+            
         }else{
+            //$groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group'])->paginate(10);
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group'])->paginate(10);
+            // return $groups;
+            $data = GroupResource::collection($groups)->response()->getData(true);  
             return apiresponse(true, 'Groups found', $data);
         }
        

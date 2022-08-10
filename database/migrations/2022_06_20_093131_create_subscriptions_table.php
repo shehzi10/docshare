@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('plan_id')->unique();
             $table->string('price')->nullable();
             $table->text('description');
+            $table->text('features')->nullable();
             $table->timestamps();
         });
     }

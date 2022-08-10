@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Post;
-use App\Models\PostDocument;
-use App\Models\Taggedfriend;
-use App\Models\UserFriend;
+use App\Models\{Post,PostDocument,Taggedfriend,UserFriend,Notification,GroupSharedDocument,Chatlist,Message,GroupMessage};
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
@@ -16,34 +13,82 @@ use App\Http\Resources\PostResource;
 use App\Http\Resources\DocumentResource;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Notification;
+
 
 
 
 class PostController extends Controller
 {
-    public function index(){
-        
+    public function index2(){ 
+        $b[] = null;
         $friends = UserFriend::where('user_id', Auth::user()->id)->where('status','approved')->get();
         $a[] = Auth::user()->id;
         foreach($friends as $friend){
             $a[] = $friend->requested_user_id;
         }
-        $posts = Post::whereIn('user_id', $a)->with(['documents' => function($q){
+        $taged_friends = Taggedfriend::whereIn('user_id', $a)->get();
+        if($taged_friends->count() > 0){
+            foreach($taged_friends as $fri){
+                $b[] = $fri->user_id;
+            }
+            $queryParam = 'user_id';
+
+        }else{
+            $queryParam = 'user_id';
+            $b = $a;
+            
+        }
+       
+        $posts = Post::whereIn($queryParam, array_unique($b))->with(['documents' => function($q){
+            $q->orderBy('updated_at','desc');
+        },'taggedFriends','user'])->paginate(10);
+
+        $data = PostResource::collection($posts)->response()->getData(true);
+        return apiresponse(true, 'Posts Found', $data);
+    }
+
+    public function index(){ 
+        $total_posts[] = null;
+        $posts = Post::where('user_id',Auth::user()->id)->get();
+        foreach($posts as $post){
+            $total_posts[] = $post->id;
+        }
+        $Taggedfriend = Taggedfriend::where('user_id',Auth::user()->id)->get();
+        foreach($Taggedfriend as $tag){
+            $total_posts[] = $tag->post_id;
+        }
+        $posts = Post::whereIn('id', array_unique($total_posts))->with(['documents' => function($q){
             $q->orderBy('updated_at','desc');
         },'taggedFriends','user'])->paginate(10);
         $data = PostResource::collection($posts)->response()->getData(true);
-        
-       
-        // $data['posts'] = $posts;
         return apiresponse(true, 'Posts Found', $data);
     }
 
 
     public function getAllDocuments(){
-        $documents = PostDocument::where('user_id', Auth::user()->id)->orderBy('updated_at','desc')->paginate(5);
+        $documents = PostDocument::where('user_id', Auth::user()->id)->where('type','<>','image')->orderBy('updated_at','desc')->paginate(5);
         $data  = DocumentResource::collection($documents)->response()->getData(true);
         return apiresponse(true, 'Documents Found', $data);
+    }
+
+    public function setDocumentPasscode(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id'        => 'required',
+            'passcode'  => 'required',
+        ]);
+        if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
+        $document = PostDocument::find($request->id);
+        if($document){
+            $document->is_protected = 1;
+            $document->key          = Hash::make($request->passcode);
+            if($document->save()){
+                return apiresponse('true','Document Encrypted');
+            }else{
+                return apiresponse('true','Something went wrong');
+            }
+        }else{
+            return apiresponse('true','Document not found');
+        }
     }
 
 
@@ -101,8 +146,8 @@ class PostController extends Controller
             'document_id'     => 'required'
         ]);
         if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
-        $document = PostDocument::findorfail($request->document_id);
-        if($document->is_protected == 1){
+        $document = PostDocument::find($request->document_id);
+        if($document != null && $document->is_protected == 1){
             if(Hash::check($request->key, $document->key)){
                 $document->updated_at = Carbon::now();
                 if($document->save()){
@@ -112,13 +157,15 @@ class PostController extends Controller
                 return apiresponse(false, 'Incorrect key');
             }
         }else{
-            $document->updated_at = Carbon::now();
-            if($document->save()){
-                return apiresponse(true, 'Document updated',$document);
+            if($document != null){
+                $document->updated_at = Carbon::now();
+                if($document->save()){
+                    return apiresponse(true, 'Document updated',$document);
+                }
+            }else{
+                return apiresponse(true, 'Document not found');
             }
         }
-        
-        
     }
 
 
@@ -145,8 +192,8 @@ class PostController extends Controller
         $post = Post::where('id', $request->post_id)->with('documents')->first();
         if($post){
             foreach($post->documents as $doc){
-                $filename = public_path('images/'.$doc->name);
-                File::delete($filename);
+                // $filename = public_path('images/'.$doc->name);
+                // File::delete($filename);
                 PostDocument::findorfail($doc->id)->delete();
             }
             if($post->delete()){
@@ -156,6 +203,7 @@ class PostController extends Controller
             }
         }
     }
+
 
 
     public function removeTag(Request $request){
@@ -170,5 +218,52 @@ class PostController extends Controller
             }else{
                 return apiresponse(false,'Something went wrong');
             }
+    }
+
+
+    public function shareDocument(Request $request){
+        $validator = Validator::make($request->all(), [
+            'document_id'   => 'required',
+            'type'          => 'required',
+            'to'            => 'required',
+        ]);
+        if ($validator->fails()) return apiresponse(false, implode("\n", $validator->errors()->all()));
+        if($request->type == 'message'){
+            $chatlist = Chatlist::find($request->to);
+            if($chatlist){
+                $messageData = [
+                    'chatlist_id'       => $chatlist->id,
+                    'type'              => 'shared_document',
+                    'sent_from_type'    => $chatlist->from_user_type,
+                    'sent_from_id'      => $chatlist->from_user_id,
+                    'sent_to_type'      => $chatlist->to_user_type,
+                    'sent_to_id'        => $chatlist->to_user_id,
+                    'post_document_id'  => $request->document_id,
+                ]; 
+                $message = Message::create($messageData);
+                if($message){
+                    return apiresponse(true, 'Document shared');
+                }else{
+                    return apiresponse(false,'Something went wrong');
+                }
+            }
+        }
+        if($request->type == 'group'){
+            $groupMessage = new GroupMessage();
+            $groupMessage->type = 'shared_document';
+            $groupMessage->group_id  = $request->to;
+            $groupMessage->user_id   = Auth::user()->id;
+            if($groupMessage->save()){
+                $sharedDocument = new GroupSharedDocument();
+                $sharedDocument->group_message_id  = $groupMessage->id;
+                $sharedDocument->post_document_id  = $request->document_id;
+                if($sharedDocument->save()){
+                    return apiresponse(true, 'Document shared');
+                }else{
+                    return apiresponse(false, 'Something went wrong');
+                }
+            }
+        }
+
     }
 }

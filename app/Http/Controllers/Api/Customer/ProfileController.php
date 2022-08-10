@@ -40,7 +40,7 @@ class ProfileController extends Controller
 
         if($request->search)
         {
-            $user = User::where('username', 'LIKE', '%' .$request->search . '%')->orderBy('created_at', 'DESC')->paginate(2);
+            $user = User::where('username', 'LIKE', '%' .$request->search . '%')->orderBy('created_at', 'DESC')->paginate(10);
             $user = UserResource::collection($user)->response()->getData(true);  
             foreach($user['data'] as $key => $friend){
                 $UserFriend = UserFriend::where('user_id',Auth::user()->id)->where('requested_user_id',$friend['id'])->first();
@@ -63,7 +63,7 @@ class ProfileController extends Controller
             return apiresponse_two( $user);
         }
         else{
-            $user = User::orderBy('created_at', 'DESC')->paginate(2);
+            $user = User::orderBy('created_at', 'DESC')->paginate(10);
             $user = UserResource::collection($user)->response()->getData(true);
             foreach($user['data'] as $key => $friend){
                 $UserFriend = UserFriend::where('user_id',Auth::user()->id)->where('requested_user_id',$friend['id'])->first();

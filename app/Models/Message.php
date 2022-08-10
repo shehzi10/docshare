@@ -12,7 +12,7 @@ class Message extends Model
     use HasFactory;
     protected $table = "messages";
     protected $fillable = [
-        'chatlist_id', 'sent_from_type', 'sent_from_id', 'sent_to_type', 'sent_to_id', 'type', 'message','media', 'read', 'image', 'audio'
+        'chatlist_id', 'sent_from_type', 'sent_from_id', 'sent_to_type', 'sent_to_id', 'type', 'message','media', 'read', 'image', 'audio','post_document_id'
     ];
 
     protected $appends = [
@@ -23,6 +23,11 @@ class Message extends Model
     public function chatlist()
     {
         return $this->belongsTo(Chatlist::class, 'chatlist_id', 'id');
+    }
+
+    public function sharedDocument()
+    {
+        return $this->belongsTo(PostDocument::class, 'post_document_id', 'id');
     }
 
     public function getSentFromAttribute()

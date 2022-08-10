@@ -14,6 +14,7 @@ use App\Models\GroupMessage;
 use App\Models\GroupMember;
 use App\Models\Post;
 use App\Models\UserFriend;
+use App\Models\PostDocumentComment;
 
 
 class User extends Authenticatable
@@ -89,4 +90,18 @@ class User extends Authenticatable
 	{
         return $this->hasMany(UserFriend::class,'requested_user_id', 'id');
 	}
+
+    public function friend()
+	{
+        return $this->hasMany(UserFriend::class,'user_id', 'id');
+	}
+
+    public function documentComments()
+	{
+        return $this->hasMany(PostDocumentComment::class,'user_id', 'id');
+	}
+
+    public function userSubscription(){
+        return $this->belongsTo(UserSubscription::class,'id', 'user_id');
+    }
 }

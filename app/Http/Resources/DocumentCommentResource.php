@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Auth;
-class GroupMemberResource extends JsonResource
+
+class DocumentCommentResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,11 +15,11 @@ class GroupMemberResource extends JsonResource
     public function toArray($request)
     {
         // return parent::toArray($request);
-        if($this->is_admin == 1){
-            $this->user->is_admin = 1;
-        }else{
-            $this->user->is_admin = 0;
-        }
-            return $this->user;
+        return [
+            'id' => $this->id,
+            'user' => $this->user,
+            'comment' => $this->comment,
+            'created_at' => $this->created_at,
+        ];
     }
 }

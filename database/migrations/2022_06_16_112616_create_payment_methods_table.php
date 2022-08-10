@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('card_brand')->nullable();
             $table->text('stripe_source_id')->nullable();
             $table->string('card_end_number')->nullable();
+            $table->string('exp_date')->nullable();
             $table->boolean('default_card')->nullable();
             $table->timestamps();
         });

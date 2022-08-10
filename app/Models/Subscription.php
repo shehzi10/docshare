@@ -10,4 +10,9 @@ class Subscription extends Model
     use HasFactory;
 
     protected $fillable = ['package_name', 'plan_id', 'price', 'description'];
+
+    public function friend()
+	{
+        return $this->hasMany(UserSubscription::class,'user_id', 'id');
+	}
 }

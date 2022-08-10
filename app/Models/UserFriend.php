@@ -17,4 +17,8 @@ class UserFriend extends Model
     public function requestedUser(){
         return $this->belongsTo(User::class, 'requested_user_id', 'id');
     }
+
+    public function recieverUser(){
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }

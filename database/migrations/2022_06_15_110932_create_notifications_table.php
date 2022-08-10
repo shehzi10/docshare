@@ -19,8 +19,9 @@ return new class extends Migration
             $table->text('body')->nullable();
             $table->foreignId('sender_id');
             $table->foreignId('reciever_id');
-            $table->enum('type',['message', 'friend_request', 'video_call', 'group_video']);
+            $table->enum('type',['message', 'friend_request','request_accepted','request_rejected', 'video_call', 'comment', 'group_video','group_message','post']);
             $table->string('content_id');
+            $table->boolean('is_read')->default(0);
             $table->timestamps();
         });
     }

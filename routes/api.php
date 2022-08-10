@@ -25,9 +25,11 @@ Route::group(['namespace' => 'App\Http\Controllers\Api'], function () {
 
     Route::post('register', 'AuthController@register');
     Route::post('login', 'AuthController@login');
+    Route::post('socialLogin', 'AuthController@socialLogin');
     Route::post('sendForgotPasswordEmail', 'AuthController@sendForgotPasswordEmail');
     Route::post('verifyForgotPin', 'AuthController@verifyForgotPin');
     Route::post('resetPassword', 'AuthController@resetPassword');
+    Route::get('helpPrivacyTerms', 'Customer\PagesController@data');
 });
 
 
@@ -41,11 +43,15 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
 
     //Post Module
     Route::get('getPosts','PostController@index')->name('getPosts');
+    Route::get('getPosts2','PostController@index2')->name('getPosts2');
     Route::post('uploadPost','PostController@store')->name('uploadPost');
     Route::post('openDocument','PostController@openDocument')->name('openDocument');
     Route::post('removeTag','PostController@removeTag')->name('removeTag');
     Route::post('deletePost','PostController@destroy')->name('deletePost');
+    Route::post('deleteDocument','PostController@deleteDocument')->name('deleteDocument');
     Route::get('getAllDocuments','PostController@getAllDocuments')->name('getAllDocuments');
+    Route::post('setDocumentPasscode','PostController@setDocumentPasscode')->name('setDocumentPasscode');
+    Route::post('shareDocument','PostController@shareDocument')->name('shareDocument');
 
 
     //Group Chat Module
@@ -66,6 +72,12 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('sendGroupMessage','GroupMessageController@store')->name('sendGroupMessage');
     Route::post('deleteMessage','GroupMessageController@destroy')->name('deleteMessage');
 
+    //Documents Module
+    Route::post('realtime_document','DocumentController@realtime_document')->name('realtime_document');
+    Route::post('updateDocument','DocumentController@updateDocument')->name('updateDocument');
+    Route::post('commentDocument','DocumentController@commentDocument')->name('commentDocument');
+    Route::post('documentComments','DocumentController@documentComments')->name('documentComments');
+    Route::post('deleteDocumentComment','DocumentController@deleteDocumentComment')->name('deleteDocumentComment');
 
     // USER FRIENDS
     Route::post('addFriend', 'FriendListController@addFriend');
@@ -81,7 +93,9 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
 
     // SETTINGS
     Route::post('toggleNotification', 'SettingsController@toggleNotification');
-    Route::post('changePassword/{id}', 'SettingsController@changePassword');
+    Route::post('changePassword', 'SettingsController@changePassword');
+    Route::get('getNotifications', 'SettingsController@getNotifications');
+    Route::post('onOffNotification', 'SettingsController@onOffNotification');
 
 
 
@@ -98,8 +112,6 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('deleteCard', 'PaymentMethodController@deleteCard');
 
 
-    // PAGES
-    Route::get('data', 'PagesController@data');
 
 
     // SUBSCRIPTION
