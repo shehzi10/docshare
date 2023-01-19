@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Route;
 // });
 
 
-
 Route::group(['namespace' => 'App\Http\Controllers\Api'], function () {
 
     Route::post('register', 'AuthController@register');
@@ -30,42 +29,33 @@ Route::group(['namespace' => 'App\Http\Controllers\Api'], function () {
     Route::post('resetPassword', 'AuthController@resetPassword');
 });
 
-
 Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' => 'auth:api'], function () {
 
     Route::get('logout', 'ProfileController@logout');
     Route::post('updateProfile', 'ProfileController@updateProfile');
     Route::post('searchUser', 'ProfileController@searchUser');
 
-
-
     //Post Module
-    Route::get('getPosts','PostController@index')->name('getPosts');
-    Route::post('uploadPost','PostController@store')->name('uploadPost');
-    Route::post('openDocument','PostController@openDocument')->name('openDocument');
-    Route::post('removeTag','PostController@removeTag')->name('removeTag');
-    Route::post('deletePost','PostController@destroy')->name('deletePost');
-    Route::get('getAllDocuments','PostController@getAllDocuments')->name('getAllDocuments');
-
+    Route::get('getPosts', 'PostController@index')->name('getPosts');
+    Route::post('uploadPost', 'PostController@store')->name('uploadPost');
+    Route::post('openDocument', 'PostController@openDocument')->name('openDocument');
+    Route::post('removeTag', 'PostController@removeTag')->name('removeTag');
+    Route::post('deletePost', 'PostController@destroy')->name('deletePost');
+    Route::get('getAllDocuments', 'PostController@getAllDocuments')->name('getAllDocuments');
 
     //Group Chat Module
-    Route::post('getGroups','GroupController@index')->name('getGroups');
-    Route::post('createGroup','GroupController@store')->name('createGroup');
-    Route::post('updateGroup','GroupController@update')->name('updateGroup');
-    Route::post('groupMembers','GroupController@groupMembers')->name('groupMembers');
-    Route::post('removeMember','GroupController@removeMember')->name('removeMember');
-    Route::post('leaveGroup','GroupController@leaveGroup')->name('leaveGroup');
-    Route::post('deleteGroup','GroupController@deleteGroup')->name('deleteGroup');
-    
-    
-
-
+    Route::post('getGroups', 'GroupController@index')->name('getGroups');
+    Route::post('createGroup', 'GroupController@store')->name('createGroup');
+    Route::post('updateGroup', 'GroupController@update')->name('updateGroup');
+    Route::post('groupMembers', 'GroupController@groupMembers')->name('groupMembers');
+    Route::post('removeMember', 'GroupController@removeMember')->name('removeMember');
+    Route::post('leaveGroup', 'GroupController@leaveGroup')->name('leaveGroup');
+    Route::post('deleteGroup', 'GroupController@deleteGroup')->name('deleteGroup');
 
     //Group Messages Module
-    Route::post('getGroupMessages','GroupMessageController@index')->name('getGroupMessages');
-    Route::post('sendGroupMessage','GroupMessageController@store')->name('sendGroupMessage');
-    Route::post('deleteMessage','GroupMessageController@destroy')->name('deleteMessage');
-
+    Route::post('getGroupMessages', 'GroupMessageController@index')->name('getGroupMessages');
+    Route::post('sendGroupMessage', 'GroupMessageController@store')->name('sendGroupMessage');
+    Route::post('deleteMessage', 'GroupMessageController@destroy')->name('deleteMessage');
 
     // USER FRIENDS
     Route::post('addFriend', 'FriendListController@addFriend');
@@ -77,13 +67,9 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::post('friendsList', 'FriendListController@getFriendsList');
     Route::get('friendsListSearch', 'FriendListController@friendsListSearch');
 
-
-
     // SETTINGS
     Route::post('toggleNotification', 'SettingsController@toggleNotification');
     Route::post('changePassword/{id}', 'SettingsController@changePassword');
-
-
 
     // MESSAGES
     Route::post('chatIndex', 'ChatsController@index');
@@ -97,13 +83,10 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     Route::get('showMethod', 'PaymentMethodController@showMethod');
     Route::post('deleteCard', 'PaymentMethodController@deleteCard');
 
-
     // PAGES
     Route::get('data', 'PagesController@data');
 
-
     // SUBSCRIPTION
-
     Route::get('getAllPackages', 'SubscriptionController@getAllPackages');
     Route::post('subscribe', 'SubscriptionController@subscribe');
     Route::get('getSubHistory', 'SubscriptionController@getSubHistory');
@@ -111,5 +94,4 @@ Route::group(['namespace' => 'App\Http\Controllers\Api\Customer', 'middleware' =
     //VIDEO CALL
     Route::post('generateToken', 'VideoCallController@generateToken');
     Route::post('declineCall', 'VideoCallController@declineCall');
-
 });

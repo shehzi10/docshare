@@ -7,6 +7,7 @@ use App\Models\Chatlist;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +19,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Pagination\Paginator;
 use App\Models\MessageLocation;
 
-
-class ChatsController extends Controller 
+class ChatsController extends Controller
 {
-    
-
     public function index(Request $request)
     {
         $search = $request->search;
@@ -31,18 +29,20 @@ class ChatsController extends Controller
         $chatlist = Chatlist::with(['to_user', 'from_user'])
             ->select(['chatlists.*', 'fromuser.username as fromusername', 'touser.username as tousername'])
             ->leftjoin('users as fromuser', 'fromuser.id', 'chatlists.from_user_id')->leftjoin('users as touser', 'touser.id', 'chatlists.to_user_id');
+
         if ($search) {
-            $chatlist = $chatlist->where(DB::raw("(fromuser.username LIKE '%" . $search . "%' OR touser.username LIKE '%" . $search . "%') AND (from_user_id = '" . $user->id . "' OR to_user_id = '" . $user->id . "')"), ">", DB::raw("0"))->simplePaginate(10);
+            $chatlist = $chatlist->where(DB::raw("(fromuser.username LIKE '%" . $search . "%' OR touser.username LIKE '%" . $search . "%') AND (from_user_id = '" . $user->id . "' OR to_user_id = '" . $user->id . "')"), ">", DB::raw("0"))->orderBy('updated_at', 'DESC')->simplePaginate(10);
         } else {
             $chatlist = $chatlist->where(function ($q) use ($user) {
                 $q->where('from_user_type', 'App\Models\User')
-                    ->where('from_user_id', $user->id)->orderBy('created_at', 'DESC')->simplePaginate(10);
+                    ->where('from_user_id', $user->id)->orderBy('updated_at', 'DESC')->simplePaginate(10);
             })
                 ->orWhere(function ($q) use ($user) {
                     $q->where('to_user_type', 'App\Models\User')
                         ->where('to_user_id', $user->id);
-                })->orderBy('created_at', 'DESC')->simplePaginate(10);
+                })->orderBy('updated_at', 'DESC')->simplePaginate(10);
         }
+
         //        $data = [];
         //        foreach ($chatlist as $v) {
         //            $msgsCount = Message::where('chatlist_id', '=', $v->id)->count();
@@ -51,6 +51,7 @@ class ChatsController extends Controller
         //                $data[] = $v;
         //            }
         //        }
+
         foreach ($chatlist as $key => $chat) {
             if ($chat->from_user_id == Auth::user()->id) {
                 $mine = $chatlist[$key]['fromusername'];
@@ -62,43 +63,43 @@ class ChatsController extends Controller
             }
             $chat->is_group = 0;
         }
+
         $arr = array();
         if ($search) {
-            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group' => function($q) use ($request){
-                $q->where('name','like','%'.$request->search.'%');
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status', 1)->with(['group' => function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
             }])->get();
-        }else{
-            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status',1)->with(['group'])->get();
+        } else {
+            $groups = GroupMember::where('user_id', Auth::user()->id)->where('status', 1)->with(['group'])->get();
         }
-        if($groups[0]->group != null){
+
+        if ($groups->count() > 0 && $groups[0]->group != null) {
             $data = GroupResource::collection($groups);
-            foreach($data as $key => $chat){    
+            foreach ($data as $key => $chat) {
                 $arr[] = $chat;
             }
         }
-        
-        foreach($chatlist as $key => $chat){
+
+        foreach ($chatlist as $key => $chat) {
             $arr[] = $chat;
         }
+
         usort($arr, 'date_compare');
         $collection = collect($arr);
         return apiresponse(true, 'Chat Found', $collection);
     }
 
-    
-
-
-    public function sendMessage(Request $request){ 
- 
+    public function sendMessage(Request $request)
+    {
         $user = request()->user();
-        $validator = Validator::make($request->all(),[
-            'user_id'       =>      'required|exists:users,id',
-            'type'          =>      'required|in:text,image,media,location,document',
-            'message'       =>      [Rule::requiredIf($request->type == "text")],
-            'media'         =>      [Rule::requiredIf($request->type == "media")]
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'type' => 'required|in:text,image,media,location,document',
+            'message' => [Rule::requiredIf($request->type == "text")],
+            'media' => [Rule::requiredIf($request->type == "media")]
         ]);
         if ($validator->fails())
-        return apiresponse(false, implode("\n", $validator->errors()->all()), null, 400);
+            return apiresponse(false, implode("\n", $validator->errors()->all()), null, 400);
 
         $user_id = $request->user_id;
 
@@ -120,6 +121,10 @@ class ChatsController extends Controller
                 'to_user_type' => 'App\Models\User',
                 'to_user_id' => $user_id
             ]);
+        } else {
+            $chatlist->update([
+                'updated_at' => Carbon::now(),
+            ]);
         }
         $messageData = [
             'chatlist_id' => $chatlist->id,
@@ -138,7 +143,7 @@ class ChatsController extends Controller
             $fileName = time() . '.' . $request->file('media')->getClientOriginalExtension();
             $request->file('media')->move(public_path('images'), $fileName);
             $messageData['media'] = $fileName;
-        } 
+        }
         if ($request->type == "audio" and $request->hasFile('audio')) {
             $fileName = time() . '.' . $request->file('media')->getClientOriginalExtension();
             $request->file('audio')->move(public_path('images'), $fileName);
@@ -149,40 +154,36 @@ class ChatsController extends Controller
             $request->file('image')->move(public_path('images'), $fileName);
             $messageData['image'] = $fileName;
         }
-        $messageData['message'] = $request->message; 
+        $messageData['message'] = $request->message;
 
         $message = Message::create($messageData);
-        if($request->has('location')){
-            $MessageLocation= new MessageLocation();
-            $MessageLocation->lat  = $request->location['lat'];
-            $MessageLocation->long  = $request->location['long'];
-            $MessageLocation->message_id  = $message->id;
-            $MessageLocation->save(); 
+        if ($request->has('location')) {
+            $MessageLocation = new MessageLocation();
+            $MessageLocation->lat = $request->location['lat'];
+            $MessageLocation->long = $request->location['long'];
+            $MessageLocation->message_id = $message->id;
+            $MessageLocation->save();
         }
-        $message = Message::where('id',$message->id)->with('location')->get();
+        $message = Message::where('id', $message->id)->with('location')->get();
         $message = $message->first();
         $message->user = $user;
-        broadcast(new \App\Events\Message(json_decode(json_encode($message)),false))->toOthers();
+        broadcast(new \App\Events\Message(json_decode(json_encode($message)), false))->toOthers();
 
         $title = 'You have a new message from ' . $request->user()->username;
         $body = $message->message;
 
         SendNotification($message->sent_to->device_id, $title, $body);
 
-
         $notification = new Notification();
-
-        $notification->sender_id                =   request()->user()->id;
-        $notification->reciever_id              =   $message->sent_to_id;
-        $notification->title                    =   $title;
-        $notification->body                     =   $body;
-        $notification->type                     =   'message';
-        $notification->content_id               =   request()->user()->id;
-
+        $notification->sender_id = request()->user()->id;
+        $notification->reciever_id = $message->sent_to_id;
+        $notification->title = $title;
+        $notification->body = $body;
+        $notification->type = 'message';
+        $notification->content_id = request()->user()->id;
         $notification->save();
 
         return apiresponse(true, 'Message Sent', $message);
-
     }
 
     public function show($id)
@@ -200,27 +201,26 @@ class ChatsController extends Controller
         $chathead = Chatlist::where(DB::raw("(from_user_id  =  " . Auth::user()->id . " AND to_user_id  = $request->id) or (from_user_id  = $request->id AND to_user_id  = " . Auth::user()->id . ")"), '>', DB::raw('0'))
             ->first();
 
-            // return Auth::user()->id;
-            if (empty($chathead)) {
+        // return Auth::user()->id;
+        if (empty($chathead)) {
 
             $chathead = Chatlist::create([
                 "from_user_id" => Auth::user()->id,
                 "to_user_id" => $request->id,
-                'from_user_type'    =>  'App\Models\User',
-                'to_user_type'      =>  'App\Models\User',
+                'from_user_type' => 'App\Models\User',
+                'to_user_type' => 'App\Models\User',
             ]);
         } else {
 
             $chathead = Chatlist::where('id', $chathead->id)->update([
                 "from_user_id" => Auth::user()->id,
                 "to_user_id" => $request->id,
-
             ]);
 
             $chathead = Chatlist::where(DB::raw("(from_user_id  =  " . Auth::user()->id . " AND to_user_id  = $request->id) or (from_user_id  = $request->id AND to_user_id  = " . Auth::user()->id . ")"), '>', DB::raw('0'))
                 ->first();
         }
-        $chathead->user =    User::find($request->id);
+        $chathead->user = User::find($request->id);
         return apiresponse(true, 'Chatlist', $chathead);
     }
 }

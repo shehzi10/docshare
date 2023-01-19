@@ -11,7 +11,7 @@ class Chatlist extends Model
 
     protected $table = "chatlists";
 
-    protected $fillable = ['from_user_type', 'from_user_id', 'to_user_type', 'to_user_id'];
+    protected $fillable = ['from_user_type', 'from_user_id', 'to_user_type', 'to_user_id', 'updated_at'];
 
     protected $appends = [
         'talking_to',
